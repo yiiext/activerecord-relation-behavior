@@ -1,11 +1,18 @@
 <?php
 
 /**
+ * How to run this test
+ * --------------------
  *
- * Run this test with:
+ * 1. make sure yii framework is available under ./yii/framework
+ *    you can do this by
+ *    - cloning the yii git repo with `git clone https://github.com/yiisoft/yii.git yii`
+ *    - or linking existing yii directory here with `ln -s ../../path/to/yii yii`
  *
- * phpunit --coverage-html tmp/coverage --colors EActiveRecordRelationBehaviorTest.php
+ * 2. make sure you have phpunit installed and available in PATH (http://www.phpunit.de/manual/3.6/en/installation.html)
  *
+ * 3. run `phpunit --colors EActiveRecordRelationBehaviorTest.php` or if you want coverage information in html,
+ *    run `phpunit --coverage-html tmp/coverage --colors EActiveRecordRelationBehaviorTest.php`
  *
  */
 
@@ -14,13 +21,19 @@ define('TEST_NAMESPACE', 'yiiext\behaviors\ActiveRecordRelation\tests');
 
 
 if (!defined('YII_PATH')) {
-	$yii = dirname(__FILE__).'/../../yii/framework/yiit.php';
+	$yii = dirname(__FILE__).'/yii/framework/yiit.php';
 	require_once($yii);
 }
 
 require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
 
 /**
+ *
+ * @todo make sure it works with any configuration
+ * @todo make sure it works with any custom db connection
+ * @todo make sure it works with and without table prefix
+ * @todo make sure it works with and without defined primary keys
+ *
  *
  * @author CeBe <mail@cebe.cc>
  */
@@ -30,6 +43,9 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	/** @var EActiveRecordRelationBehaviorTestMigration */
 	protected $migration;
 
+	/**
+	 * set up environment with yii application and migrate up db
+	 */
 	public function setUp()
 	{
 		$basePath=dirname(__FILE__).'/tmp';
@@ -62,6 +78,9 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 	}
 
+	/**
+	 * migrate down db when test succeeds
+	 */
 	public function tearDown()
 	{
 		if (!$this->hasFailed() && $this->migration && $this->db) {
@@ -71,11 +90,39 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	}
 
 	/**
+	 * dataprovider that lists possible configuration options for foreign keys, so
+	 * we make sure to have our models configured in many ways and it still works
+	 */
+	public function fkConfigurationProvider()
+	{
+		$configOptions = array('normal', 'fkarray', /*'fkcomma' will be used when composite pks are supported*/);
+
+		// @todo mix them!
+		$configs = array();
+		foreach($configOptions as $option) {
+			$configs[] = array(array('Profile'=>$option, 'User'=>$option, 'Post'=>$option, 'Category'=>$option));
+		}
+		return $configs;
+	}
+
+	protected function setConfig($config)
+	{
+		Profile::$configurationType = $config['Profile'];
+		User::$configurationType = $config['User'];
+		Post::$configurationType = $config['Post'];
+		Category::$configurationType = $config['Category'];
+	}
+
+	/**
 	 * test creation of AR and assigning a relation with HAS_ONE
 	 * this also tests the HAS_ONE oposite BELONGS_TO
+	 *
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasOne()
+	public function testHasOne($config)
 	{
+		$this->setConfig($config);
+
 		// check if the normal thing works
 		$john = $this->getJohn();
 		$this->assertSaveSuccess($john);
@@ -147,9 +194,13 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	/**
 	 * test creation of AR and assigning a relation with HAS_MANY as pk values
 	 * one record is added as object later
+	 *
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasManyPk()
+	public function testHasManyPk($config)
 	{
+		$this->setConfig($config);
+
 		$author = $this->getJohn();
 		$this->assertSaveSuccess($author);
 
@@ -207,9 +258,13 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	/**
 	 * test creation of AR and assigning a relation with HAS_MANY as objects values
 	 * one record is added as pk later
+	 *
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasManyObject()
+	public function testHasManyObject($config)
 	{
+		$this->setConfig($config);
+
 		$author = $this->getJohn();
 		$this->assertSaveSuccess($author);
 
@@ -314,11 +369,20 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 	public function manymanyData()
 	{
-		return array(
+		$data = array(
 			array(true, 1), // only pks
 			array(true, 2), // mixed
 			array(false, 1), // only model objects
 		);
+
+		// mix in data from @dataProvider fkConfigurationProvider
+		$return = array();
+		foreach($this->fkConfigurationProvider() as $row) {
+			foreach($data as $dataRow) {
+				$return[] = array_merge($dataRow, $row);
+			}
+		}
+		return $return;
 	}
 
 	/**
@@ -326,8 +390,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 *
 	 * @dataProvider manymanyData
 	 */
-	public function testManyMany($postsAsPk, $modulo)
+	public function testManyMany($postsAsPk, $modulo, $config)
 	{
+		$this->setConfig($config);
+
 		if ($postsAsPk) { // first with pk data
 			$posts=$this->getPosts(10, true);
 			for($n=1;$n<10;$n++) {
@@ -388,25 +454,13 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	}
 
 	/**
-	 * test creation of AR and assigning a relation with MANY_MANY as objects values
-	 */
-	public function testManyManyObject()
-	{
-		list($un1, $un2) = $this->beforeManyMany();
-
-		// begin real test
-
-		// @todo write test
-
-		// end real test, checking untouched
-		$this->afterManyMany($un1, $un2);
-	}
-
-	/**
 	 * @expectedException CDbException
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testManyManyException()
+	public function testManyManyException($config)
 	{
+		$this->setConfig($config);
+
 		$cat = new Category();
 		$cat->posts = 1;
 		$cat->save();
@@ -414,9 +468,12 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 	/**
 	 * @expectedException CDbException
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testYiiException1()
+	public function testYiiException1($config)
 	{
+		$this->setConfig($config);
+
 		$cat = new Category();
 		$cat->broken = true;
 		$cat->posts = array();
@@ -425,9 +482,12 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 	/**
 	 * @expectedException CDbException
+	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testYiiException2()
+	public function testYiiException2($config)
 	{
+		$this->setConfig($config);
+
 		$cat = new Category();
 		$this->migration->dropRelationTable();
 		$cat->posts = array();
@@ -597,6 +657,7 @@ class EActiveRecordRelationBehaviorTestMigration extends \CDbMigration
  */
 class Profile extends \CActiveRecord
 {
+	public static $configurationType='normal';
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -639,9 +700,17 @@ class Profile extends \CActiveRecord
 	 */
 	public function relations()
 	{
-		return array(
-			'owner' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', 'owner_id'),
-		);
+		switch(static::$configurationType)
+		{
+			default:
+				return array(
+					'owner' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', 'owner_id'),
+				);
+			case 'fkarray':
+				return array(
+					'owner' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', array('owner_id'=>'id')),
+				);
+		}
 	}
 }
 
@@ -659,6 +728,7 @@ class Profile extends \CActiveRecord
  */
 class User extends \CActiveRecord
 {
+	public static $configurationType='normal';
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -701,10 +771,19 @@ class User extends \CActiveRecord
 	 */
 	public function relations()
 	{
-		return array(
-			'posts' => array(self::HAS_MANY, TEST_NAMESPACE.'\Post', 'author_id'),
-			'profile' => array(self::HAS_ONE, TEST_NAMESPACE.'\Profile', 'owner_id'),
-		);
+		switch(static::$configurationType)
+		{
+			default:
+				return array(
+					'posts' => array(self::HAS_MANY, TEST_NAMESPACE.'\Post', 'author_id'),
+					'profile' => array(self::HAS_ONE, TEST_NAMESPACE.'\Profile', 'owner_id'),
+				);
+			case 'fkarray':
+				return array(
+					'posts' => array(self::HAS_MANY, TEST_NAMESPACE.'\Post', array('id'=>'author_id')),
+					'profile' => array(self::HAS_ONE, TEST_NAMESPACE.'\Profile', array('id'=>'owner_id')),
+				);
+		}
 	}
 }
 
@@ -723,6 +802,7 @@ class User extends \CActiveRecord
  */
 class Post extends \CActiveRecord
 {
+	public static $configurationType='normal';
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -765,10 +845,19 @@ class Post extends \CActiveRecord
 	 */
 	public function relations()
 	{
-		return array(
-			'categories' => array(self::MANY_MANY, TEST_NAMESPACE.'\Category', 'tbl_post_category(post_id, category_id)'),
-			'author' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', 'author_id'),
-		);
+		switch(static::$configurationType)
+		{
+			default:
+				return array(
+					'categories' => array(self::MANY_MANY, TEST_NAMESPACE.'\Category', 'tbl_post_category(post_id, category_id)'),
+					'author' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', 'author_id'),
+				);
+			case 'fkarray':
+				return array(
+					'categories' => array(self::MANY_MANY, TEST_NAMESPACE.'\Category', 'tbl_post_category(post_id, category_id)'),
+					'author' => array(self::BELONGS_TO, TEST_NAMESPACE.'\User', array('author_id'=>'id')),
+				);
+		}
 	}
 }
 
@@ -784,6 +873,7 @@ class Post extends \CActiveRecord
 class Category extends \CActiveRecord
 {
 	public $broken = false;
+	public static $configurationType='normal';
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -827,9 +917,13 @@ class Category extends \CActiveRecord
 	public function relations()
 	{
 		if (!$this->broken) {
-			return array(
-				'posts' => array(self::MANY_MANY, TEST_NAMESPACE.'\Post', 'tbl_post_category(category_id, post_id)'),
-			);
+			switch(static::$configurationType)
+			{
+				default:
+					return array(
+						'posts' => array(self::MANY_MANY, TEST_NAMESPACE.'\Post', 'tbl_post_category(category_id, post_id)'),
+					);
+			}
 		}
 		return array(
 			'posts' => array(self::MANY_MANY, TEST_NAMESPACE.'\Post', 'tbl_post_category'),
