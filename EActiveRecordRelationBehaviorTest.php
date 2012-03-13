@@ -1,6 +1,12 @@
 <?php
-
 /**
+ * EActiveRecordRelationBehavior unit tests
+ *
+ * @author Carsten Brandt <mail@cebe.cc>
+ * @link http://yiiext.github.com/extensions/activerecord-relation-behavior/index.html
+ * @copyright Copyright &copy; 2012 Carsten Brandt
+ * @license https://github.com/yiiext/activerecord-relation-behavior/blob/master/LICENSE#L1
+ *
  * How to run this test
  * --------------------
  *
@@ -13,12 +19,10 @@
  *
  * 3. run `phpunit --colors EActiveRecordRelationBehaviorTest.php` or if you want coverage information in html,
  *    run `phpunit --coverage-html tmp/coverage --colors EActiveRecordRelationBehaviorTest.php`
- *
  */
 
-namespace yiiext\behaviors\ActiveRecordRelation\tests;
-define('TEST_NAMESPACE', 'yiiext\behaviors\ActiveRecordRelation\tests');
-
+namespace yiiext\behaviors\activeRecordRelation\tests;
+define('TEST_NAMESPACE', 'yiiext\behaviors\activeRecordRelation\tests');
 
 if (!defined('YII_PATH')) {
 	$yii = dirname(__FILE__).'/yii/framework/yiit.php';
@@ -28,6 +32,7 @@ if (!defined('YII_PATH')) {
 require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
 
 /**
+ * unit test class for EActiveRecordRelationBehavior
  *
  * @todo make sure it works with any configuration
  * @todo make sure it works with any custom db connection
@@ -35,7 +40,8 @@ require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
  * @todo make sure it works with and without defined primary keys
  *
  *
- * @author CeBe <mail@cebe.cc>
+ * @author Carsten Brandt <mail@cebe.cc>
+ * @package yiiext.behaviors.activeRecordRelation.tests
  */
 class EActiveRecordRelationBehaviorTest extends \CTestCase
 {

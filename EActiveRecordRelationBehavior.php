@@ -1,5 +1,14 @@
 <?php
 /**
+ * EActiveRecordRelationBehavior class file.
+ *
+ * @author Carsten Brandt <mail@cebe.cc>
+ * @link http://yiiext.github.com/extensions/activerecord-relation-behavior/index.html
+ * @copyright Copyright &copy; 2012 Carsten Brandt
+ * @license https://github.com/yiiext/activerecord-relation-behavior/blob/master/LICENSE#L1
+ */
+
+/**
  * Inspired by and put together the awesomeness of the following yii extensions:
  *
  * - can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior and advancedrelationsbehavior
@@ -53,9 +62,10 @@
  * Limitations:
  * - This will only work for AR that have PrimaryKey defined!
  *
- *
- * @author CeBe <mail@cebe.cc>
  * @property CActiveRecord $owner
+ *
+ * @author Carsten Brandt <mail@cebe.cc>
+ * @package yiiext.behaviors.activeRecordRelation
  */
 class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 {
