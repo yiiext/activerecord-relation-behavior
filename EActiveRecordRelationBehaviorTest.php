@@ -38,6 +38,7 @@ require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
  * @todo make sure it works with any custom db connection
  * @todo make sure it works with and without table prefix
  * @todo make sure it works with and without defined primary keys
+ * @todo make sure 'through' relations are not touched until they are supported
  *
  *
  * @author Carsten Brandt <mail@cebe.cc>

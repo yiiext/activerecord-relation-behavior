@@ -61,6 +61,7 @@
  *
  * Limitations:
  * - This will only work for AR that have PrimaryKey defined!
+ * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
  *
  * @property CActiveRecord $owner
  *
@@ -113,6 +114,10 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 				//             (e.g. Post belongs to User);
 				// attribute of $this->owner has to be changed
 				case CActiveRecord::BELONGS_TO:
+
+					if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+						break;
+
 					$pk = null;
 					/** @var CActiveRecord $related */
 					if (($related=$this->owner->getRelated($name, false))!==null)
@@ -159,6 +164,9 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					 *
 					 */
 					case CActiveRecord::MANY_MANY:
+
+						if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+							break;
 
 						Yii::trace('updating MANY_MANY table for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
 
@@ -210,6 +218,9 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					// need to change the foreign ARs attributes
 					case CActiveRecord::HAS_MANY:
 					case CActiveRecord::HAS_ONE:
+
+						if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+							break;
 
 						$newRelatedRecords=$this->owner->getRelated($name, false);
 						if ($relation[0]==CActiveRecord::HAS_MANY && !is_array($newRelatedRecords))
