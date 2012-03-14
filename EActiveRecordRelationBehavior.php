@@ -215,39 +215,31 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 						if (isset($relation['through'])) // do not do anything with relations defined with 'through'
 							break;
 
+						Yii::trace('updating '.(($relation[0]==CActiveRecord::HAS_ONE)?'HAS_ONE':'HAS_MANY').' foreign-key field for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
+
 						$newRelatedRecords=$this->owner->getRelated($name, false);
+
 						if ($relation[0]==CActiveRecord::HAS_MANY && !is_array($newRelatedRecords))
 							throw new CDbException('A HAS_MANY relation needs to be an array of records or primary keys!');
+
+						// HAS_ONE is special case of HAS_MANY, so we have array with one or no element
 						if ($relation[0]==CActiveRecord::HAS_ONE) {
-							// if relation set to null update all possibly related records
-							if ($newRelatedRecords===null) {
-								CActiveRecord::model($relation[1])->updateAll(
-									array($relation[2]=>null),
-									$relation[2].'=:pk',
-									// @todo add support for composite primary keys
-									array(':pk'=>$this->owner->getPrimaryKey())
-								);
-								break;
-							}
-							$newRelatedRecords=array($newRelatedRecords);
+							if ($newRelatedRecords===null)
+								$newRelatedRecords=array();
+							else
+								$newRelatedRecords=array($newRelatedRecords);
 						}
 
-						// @todo ensure hasone has only one
-						// @todo update belongsto
-						// @todo add support for composite primary keys
-
-						// get related records primary keys
+						// get related records as objects and primary keys
 						$newRelatedRecords=$this->primaryKeysToObjects($newRelatedRecords, $relation[1]);
 						$newPKs=$this->objectsToPrimaryKeys($newRelatedRecords);
 
+						// @todo add support for composite primary keys
 						// update all not anymore related records
 						$criteria=new CDbCriteria();
-
 						$criteria->addNotInCondition(CActiveRecord::model($relation[1])->tableSchema->primaryKey, $newPKs)
 								 ->addColumnCondition(array($relation[2]=>$this->owner->getPrimaryKey()));
 						CActiveRecord::model($relation[1])->updateAll(array($relation[2]=>null), $criteria);
-
-						Yii::trace('set HAS_ONE foreign-key field for '.get_class($this->owner),'system.db.ar.CActiveRecord'); //@todo rewrite
 
 						/** @var CActiveRecord $record */
 						foreach($newRelatedRecords as $record) {
