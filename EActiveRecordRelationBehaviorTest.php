@@ -34,12 +34,16 @@ require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
 /**
  * unit test class for EActiveRecordRelationBehavior
  *
- * @todo make sure it works with any configuration
- * @todo make sure it works with any custom db connection
+ * these things are not covered and should be kept in mind while developing:
+ *
+ * - make sure it works with any custom db connection
+ *   therefor only use $this->owner->dbConnection
+ * - make sure it works with any possible configuration that works for yii
+ *
+ * these things should be added in test
  * @todo make sure it works with and without table prefix
  * @todo make sure it works with and without defined primary keys
  * @todo make sure 'through' relations are not touched until they are supported
- *
  *
  * @author Carsten Brandt <mail@cebe.cc>
  * @package yiiext.behaviors.activeRecordRelation.tests
