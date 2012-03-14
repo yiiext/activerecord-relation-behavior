@@ -121,6 +121,52 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	}
 
 	/**
+	 * test creation of AR and assigning a relation with BELONGS_TO
+	 *
+	 * @dataProvider fkConfigurationProvider
+	 */
+	public function testBelongsTo($config)
+	{
+		$this->setConfig($config);
+
+		$john = $this->getJohn();
+		$p = new Post();
+		$p->title = 'hi testing!';
+		$p->author = $john;
+
+		// saving with a related record that is new should fail
+		$exception=false;
+		try {
+			$p->save();
+		} catch (\CDbException $e) {
+			$exception=true;
+		}
+		$this->assertTrue($exception, 'Expected CDbException on saving with a non saved record.');
+
+		$this->assertSaveSuccess($p->author); // saved john
+		$this->assertSaveSuccess($p);
+
+		$this->assertEquals($p->author_id, $john->id);
+		$p->refresh();
+		$this->assertEquals($p->author_id, $john->id);
+		$this->assertNotNull($p->author);
+		$this->assertEquals($p->author->id, $john->id);
+
+		$jane = $this->getJane(10, true);
+		$p = new Post();
+		$p->title = 'hi testing2!';
+		$p->author = $jane->id;
+
+		$this->assertSaveSuccess($p);
+
+		$this->assertEquals($p->author_id, $jane->id);
+		$p->refresh();
+		$this->assertEquals($p->author_id, $jane->id);
+		$this->assertNotNull($p->author);
+		$this->assertEquals($p->author->id, $jane->id);
+	}
+
+	/**
 	 * test creation of AR and assigning a relation with HAS_ONE
 	 * this also tests the HAS_ONE oposite BELONGS_TO
 	 *

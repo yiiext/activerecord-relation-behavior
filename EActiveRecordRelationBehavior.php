@@ -114,14 +114,20 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					if (isset($relation['through'])) // do not do anything with relations defined with 'through'
 						break;
 
-					$pk = null;
-					/** @var CActiveRecord $related */
-					if (($related=$this->owner->getRelated($name, false))!==null)
-						$pk = $related->getPrimaryKey();
+					$pk=null;
+					if (($related=$this->owner->getRelated($name, false))!==null) {
+						if (is_object($related)) {
+							/** @var CActiveRecord $related */
+							if ($related->isNewRecord)
+								throw new CDbException('You can not save a record that has new related records!');
+							$pk=$related->getPrimaryKey();
+						} else {
+							$pk=$related;
+						}
+					}
 
+					// @todo add support for composite primary keys
 					if (!is_array($pk)) {
-						// @todo support composite keys
-					//} else {
 						$this->owner->setAttribute($relation[2], $pk);
 					}
 				break;
