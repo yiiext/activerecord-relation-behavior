@@ -88,15 +88,11 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	public function events()
 	{
 		return array(
-			'onAfterConstruct'=>'afterConstruct',
 			'onBeforeValidate'=>'beforeValidate',
-			'onAfterValidate'=>'afterValidate',
 			'onBeforeSave'=>'beforeSave',
 			'onAfterSave'=>'afterSave',
-			'onBeforeDelete'=>'beforeDelete',
-			'onAfterDelete'=>'afterDelete',
-			'onBeforeFind'=>'beforeFind',
-			'onAfterFind'=>'afterFind',
+//			'onBeforeDelete'=>'beforeDelete',
+//			'onAfterDelete'=>'afterDelete',
 		);
 	}
 
@@ -178,7 +174,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 
 						// 1. delete relation table entries for records that have been removed from relation
 						// @todo add support for composite primary keys
-						$criteria = new CDbCriteria();
+						$criteria=new CDbCriteria();
 						$criteria->addNotInCondition($fks[1], $newPKs)
 								 ->addColumnCondition(array($fks[0]=>$this->owner->getPrimaryKey()));
 						$commandBuilder->createDeleteCommand($relationTable, $criteria)->execute();
@@ -237,7 +233,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 						$newPKs=$this->objectsToPrimaryKeys($newRelatedRecords);
 
 						// update all not anymore related records
-						$criteria = new CDbCriteria();
+						$criteria=new CDbCriteria();
 
 						$criteria->addNotInCondition(CActiveRecord::model($relation[1])->tableSchema->primaryKey, $newPKs)
 								 ->addColumnCondition(array($relation[2]=>$this->owner->getPrimaryKey()));
@@ -284,7 +280,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			if (is_object($record) && $record->isNewRecord)
 				throw new CDbException('You can not save a record that has new related records!');
 
-			$pks[] = is_object($record) ? $record->getPrimaryKey() : $record;
+			$pks[]=is_object($record) ? $record->getPrimaryKey() : $record;
 		}
 		return $pks;
 	}
@@ -310,7 +306,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			if ($record===null)
 				throw new CDbException('Related record with primary key "'.print_r($pk,true).'" does not exist!');
 
-			$records[] = $record;
+			$records[]=$record;
 		}
 		return $records;
 	}
@@ -341,7 +337,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	protected function getOldManyManyPks($relationName)
 	{
 		// @todo improve performance by doing simple select query instead of using AR
-		$tmpAr = CActiveRecord::model(get_class($this->owner))->findByPk($this->owner->getPrimaryKey());
+		$tmpAr=CActiveRecord::model(get_class($this->owner))->findByPk($this->owner->getPrimaryKey());
 		return $this->objectsToPrimaryKeys($tmpAr->getRelated($relationName, true));
 	}
 
