@@ -181,7 +181,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 						}
 
 						// refresh relation data
-						$this->owner->getRelated($name, true);
+						//$this->owner->getRelated($name, true); // will come back with github issue #4
 
 					break;
 					// HAS_MANY: if the relationship between table A and B is one-to-many, then A has many B
