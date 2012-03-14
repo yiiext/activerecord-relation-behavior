@@ -17,7 +17,7 @@
  * - saves with transaction and can handle external transactions like with-related-behavior and saverbehavior
  *
  * - does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted them)
- * - does not support assigning one record to many_many relation (unclean code)
+ * - does not support assigning one record to MANY_MANY relation (unclean code)
  *
  *
  * - cadvancedarbehavior        http://www.yiiframework.com/extension/cadvancedarbehavior/
@@ -47,14 +47,14 @@
  * - delete MANY_MANY relations before delete()
  * - set other relations to null on delete when dbms does not do it
  * - update foreign keys on pk change
- * - ensure first column of many_many_table is used as this->owners column
+ * - ensure first column of MANY_MANY_table is used as this->owners column
  * - might want to allow saving of a relation explicitly
  * - might want to save related records
  * - ensure all relations are objects, not pks after save
  *
  *
  * reloading relations:
- * if you saved a belongs_to relation you have to reload the corresponding has_one relation on the object you set.
+ * if you saved a BELONGS_TO relation you have to reload the corresponding HAS_ONE relation on the object you set.
  * if you saved a...
  *
  *
