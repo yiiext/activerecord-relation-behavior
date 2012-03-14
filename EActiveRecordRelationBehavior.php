@@ -151,17 +151,16 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	public function afterSave($event)
 	{
 		try {
+			/** @var CDbCommandBuilder $commandBuilder */
+			$commandBuilder=$this->owner->dbConnection->commandBuilder;
+
 			foreach($this->owner->relations() as $name => $relation)
 			{
 				switch($relation[0]) // relation type such as BELONGS_TO, HAS_ONE, HAS_MANY, MANY_MANY
 				{
 					/* MANY_MANY: this corresponds to the many-to-many relationship in database.
-					 *            An associative table is needed to break a many-to-many relationship into
-					 *            one-to-many relationships, as most DBMS do not support many-to-many relationship
-					 *            directly. In our example database schema, the tbl_post_category serves for this purpose.
-					 *  In AR terminology, we can explain MANY_MANY as the combination of BELONGS_TO and HAS_MANY.
-					 *  For example, Post belongs to many Category and Category has many Post.
-					 *
+					 *            An associative table is needed to break a many-to-many relationship into one-to-many
+					 *            relationships, as most DBMS do not support many-to-many relationship directly.
 					 */
 					case CActiveRecord::MANY_MANY:
 
@@ -170,45 +169,35 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 
 						Yii::trace('updating MANY_MANY table for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
 
-						// getting many many table information (following 7 lines are copied from CActiveFinder:561-568)
-						// https://github.com/yiisoft/yii/blob/2353e0adf98c8a912f0faf29cc2558c0ccd6fec7/framework/db/ar/CActiveFinder.php#L561
-						if(!preg_match('/^\s*(.*?)\((.*)\)\s*$/',$relation[2],$matches))
-							throw new CDbException(Yii::t('yii','The relation "{relation}" in active record class "{class}" is specified with an invalid foreign key. The format of the foreign key must be "joinTable(fk1,fk2,...)".',
-								array('{class}'=>get_class($this->owner),'{relation}'=>$name)));
-						if(($joinTable=$this->owner->dbConnection->schema->getTable($matches[1]))===null)
-							throw new CDbException(Yii::t('yii','The relation "{relation}" in active record class "{class}" is not specified correctly: the join table "{joinTable}" given in the foreign key cannot be found in the database.',
-								array('{class}'=>get_class($this->owner), '{relation}'=>$name, '{joinTable}'=>$matches[1])));
-						$fks=preg_split('/\s*,\s*/',$matches[2],-1,PREG_SPLIT_NO_EMPTY);
+						// get table and fk information
+						list($relationTable, $fks)=$this->parseManyManyFk($name, $relation);
 
-						/** @var CDbCommandBuilder $cb */
-						$cb=$this->owner->dbConnection->commandBuilder;
+						// get pks of the currently related records
+						$newPKs=$this->getNewManyManyPks($name);
 
-						$newRelatedRecords=$this->owner->getRelated($name, false);
-						if (!is_array($newRelatedRecords)) {
-							throw new CDbException('A MANY_MANY relation needs to be an array of records or primary keys!');
-						}
 
-						// get related records primary keys
-						$newPKs=$this->objectsToPrimaryKeys($newRelatedRecords);
-
+						// 1. delete relation table entries for records that have been removed from relation
 						// @todo add support for composite primary keys
-						// delete relation table entries for records that have been removed from relation
 						$criteria = new CDbCriteria();
 						$criteria->addNotInCondition($fks[1], $newPKs)
 								 ->addColumnCondition(array($fks[0]=>$this->owner->getPrimaryKey()));
-						$cb->createDeleteCommand($joinTable, $criteria)->execute();
+						$commandBuilder->createDeleteCommand($relationTable, $criteria)->execute();
 
-						// add new entries to relation table
-						$oldRelatedRecords=$this->getOldManyManyData($this->owner, $name);
+
+						// 2. add new entries to relation table
+						// @todo add support for composite primary keys
+						$oldPKs=$this->getOldManyManyPks($name);
 						foreach($newPKs as $fk) {
-							if (!$this->isInRelation($fk, $oldRelatedRecords)) {
-								$cb->createInsertCommand($joinTable, array(
+							if (!in_array($fk, $oldPKs)) {
+								$commandBuilder->createInsertCommand($relationTable, array(
 									$fks[0] => $this->owner->getPrimaryKey(),
 									$fks[1] => $fk,
 								))->execute();
 							}
 						}
-						$this->owner->getRelated($name, true); // refresh relation data
+
+						// refresh relation data
+						$this->owner->getRelated($name, true);
 
 					break;
 					// HAS_MANY: if the relationship between table A and B is one-to-many, then A has many B
@@ -268,7 +257,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					break;
 				}
 			}
-			// commit internal transactio if one exists
+			// commit internal transaction if one exists
 			if ($this->_transaction!==null)
 				$this->_transaction->commit();
 
@@ -282,32 +271,19 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	}
 
 	/**
-	 * checks whether a record exists in a list of ActiveRecords
-	 *
-	 * @param CActiveRecord|mixed $record ActiveRecord instance or primary key value as described in {@see CActiveRecord::getPrimaryKey()}
-	 * @param CActiveRecord[] $relationRecords list of ActiveRecord classes to search in
-	 * @return boolean
-	 */
-	protected function isInRelation($record, $relationRecords)
-	{
-		foreach($relationRecords as $r) {
-			if (is_object($record) && $record->equals($r))
-				return true;
-			elseif ($record===$r->getPrimaryKey())
-				return true;
-		}
-		return false;
-	}
-
-	/**
 	 * converts an array of AR objects to primary keys
 	 *
+	 * @throws CDbException
 	 * @param CActiveRecord[] $records
+	 * @return array
 	 */
-	private function objectsToPrimaryKeys($records)
+	protected function objectsToPrimaryKeys($records)
 	{
 		$pks=array();
 		foreach($records as $record) {
+			if (is_object($record) && $record->isNewRecord)
+				throw new CDbException('You can not save a record that has new related records!');
+
 			$pks[] = is_object($record) ? $record->getPrimaryKey() : $record;
 		}
 		return $pks;
@@ -316,9 +292,12 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	/**
 	 * converts an array of primary keys to AR objects
 	 *
+	 * @throws CDbException
 	 * @param CActiveRecord[] $pks
+	 * @param string $className classname of the ARs to instantiate
+	 * @return array
 	 */
-	private function primaryKeysToObjects($pks, $className)
+	protected function primaryKeysToObjects($pks, $className)
 	{
 		// @todo increase performance by running on query with findAllByPk()
 		$records=array();
@@ -337,14 +316,58 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	}
 
 	/**
-	 * returns old data of many many table
+	 * returns all primary keys of the currently assigned records
 	 *
-	 * @param CActiveRecord $ar AR class
-	 * @param string $name name of the relation
+	 * @throws CDbException
+	 * @param string $relationName name of the relation
+	 * @return array
 	 */
-	protected function getOldManyManyData($ar, $name)
+	protected function getNewManyManyPks($relationName)
 	{
-		$tmpAr = CActiveRecord::model(get_class($ar))->findByPk($ar->getPrimaryKey());
-		return $tmpAr->getRelated($name, true);
+		$newRelatedRecords=$this->owner->getRelated($relationName, false);
+		if (!is_array($newRelatedRecords)) {
+			throw new CDbException('A MANY_MANY relation needs to be an array of records or primary keys!');
+		}
+		// get new related records primary keys
+		return $this->objectsToPrimaryKeys($newRelatedRecords);
+	}
+
+	/**
+	 * returns all primary keys of the old assigned records(in database)
+	 *
+	 * @param string $relationName name of the relation
+	 * @return array
+	 */
+	protected function getOldManyManyPks($relationName)
+	{
+		// @todo improve performance by doing simple select query instead of using AR
+		$tmpAr = CActiveRecord::model(get_class($this->owner))->findByPk($this->owner->getPrimaryKey());
+		return $this->objectsToPrimaryKeys($tmpAr->getRelated($relationName, true));
+	}
+
+	/**
+	 * parses the foreign key definition of a MANY_MANY relation
+	 *
+	 * the first 7 lines are copied from CActiveFinder:561-568
+	 * https://github.com/yiisoft/yii/blob/2353e0adf98c8a912f0faf29cc2558c0ccd6fec7/framework/db/ar/CActiveFinder.php#L561
+	 *
+	 * @throws CDbException
+	 * @param string $name name of the relation
+	 * @param array $relation relation definition
+	 * @return array ($joinTable, $fks)
+	 *               joinTable is the many-many-relation-table
+	 *               fks are primary key of that table defining the relation
+	 */
+	protected function parseManyManyFk($name, $relation)
+	{
+		if(!preg_match('/^\s*(.*?)\((.*)\)\s*$/',$relation[2],$matches))
+			throw new CDbException(Yii::t('yii','The relation "{relation}" in active record class "{class}" is specified with an invalid foreign key. The format of the foreign key must be "joinTable(fk1,fk2,...)".',
+				array('{class}'=>get_class($this->owner),'{relation}'=>$name)));
+		if(($joinTable=$this->owner->dbConnection->schema->getTable($matches[1]))===null)
+			throw new CDbException(Yii::t('yii','The relation "{relation}" in active record class "{class}" is not specified correctly: the join table "{joinTable}" given in the foreign key cannot be found in the database.',
+				array('{class}'=>get_class($this->owner), '{relation}'=>$name, '{joinTable}'=>$matches[1])));
+		$fks=preg_split('/\s*,\s*/',$matches[2],-1,PREG_SPLIT_NO_EMPTY);
+
+		return array($joinTable, $fks);
 	}
 }
