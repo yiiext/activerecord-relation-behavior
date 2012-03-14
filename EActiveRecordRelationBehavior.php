@@ -98,6 +98,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 
 	/**
 	 * Responds to {@link CModel::onBeforeValidate} event.
+	 * @throws CDbException
 	 * @param CModelEvent $event event parameter
 	 */
 	public function beforeValidate($event)
@@ -148,6 +149,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 
 	/**
 	 * Responds to {@link CActiveRecord::onAfterSave} event.
+	 * @throws CDbException
 	 * @param CModelEvent $event event parameter
 	 */
 	public function afterSave($event)
