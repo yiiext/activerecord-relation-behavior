@@ -102,7 +102,11 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 */
 	public function fkConfigurationProvider()
 	{
-		$configOptions = array('normal', 'fkarray', /*'fkcomma' will be used when composite pks are supported*/);
+		$configOptions = array(
+			'normal', // all fks configured as string
+//			'fkarray', // will be supported when support for composite pks is added
+//			'fkcomma', // will be used when composite pks are supported
+		);
 
 		// @todo mix them!
 		$configs = array();
