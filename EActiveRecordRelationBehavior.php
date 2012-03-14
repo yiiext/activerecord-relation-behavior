@@ -9,25 +9,28 @@
  */
 
 /**
+ * EActiveRecordRelationBehavior adds the possiblity to handle activerecord relations more intuitively
+ *
+ * For details on how to use it please refer to the README.* files that ship with it.
+ *
  * Inspired by and put together the awesomeness of the following yii extensions:
  *
- * - can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior and advancedrelationsbehavior
- * - cares about relations when records get deleted like eadvancedarbehavior
- * - can save BELONGS_TO, HAS_MANY, HAS_ONE like eadvancedarbehavior and advancedrelationsbehavior
- * - saves with transaction and can handle external transactions like with-related-behavior and saverbehavior
+ * - can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
+ * - cares about relations when records get deleted like eadvancedarbehavior (*)
+ * - can save BELONGS_TO, HAS_MANY, HAS_ONE like eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
+ * - saves with transaction and can handle external transactions like with-related-behavior, esaverelatedbehavior and saverbehavior
+ * - does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted it)
+ * - validates for array on HAS_MANY and MANY_MANY relation to have more clear semantic
  *
- * - does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted them)
- * - does not support assigning one record to MANY_MANY relation (unclean code)
+ * (*) not yet implemented, see github issue #7
  *
- *
+ * these are the extensions mentioned above
  * - cadvancedarbehavior        http://www.yiiframework.com/extension/cadvancedarbehavior/
  * - eadvancedarbehavior        http://www.yiiframework.com/extension/eadvancedarbehavior
- * - saverbehavior              http://www.yiiframework.com/extension/saverbehavior
  * - advancedrelationsbehavior  http://www.yiiframework.com/extension/advancedrelationsbehavior
+ * - saverbehavior              http://www.yiiframework.com/extension/saverbehavior
  * - with-related-behavior      https://github.com/yiiext/with-related-behavior
  * - CSaveRelationsBehavior     http://code.google.com/p/yii-save-relations-ar-behavior/
- *
- * to be revived:
  * - esaverelatedbehavior       http://www.yiiframework.com/extension/esaverelatedbehavior
  *
  * reviewed but did not take something out:
@@ -35,35 +38,12 @@
  * - save-relations-ar-behavior http://www.yiiframework.com/extension/save-relations-ar-behavior
  *
  *
- *
- * API:
- *
- * Features:
- *
- * Todo:
- * - write documentation, add more tests
- * - read this: http://stackoverflow.com/questions/5143254/its-possible-extend-ar-relationships
- * - might want to have ignoreRelations as in http://code.google.com/p/yii-user-management/source/browse/trunk/user/components/CAdvancedArBehavior.php#84
- * - delete MANY_MANY relations before delete()
- * - set other relations to null on delete when dbms does not do it
- * - update foreign keys on pk change
- * - ensure first column of MANY_MANY_table is used as this->owners column
- * - might want to allow saving of a relation explicitly
- * - might want to save related records
- * - ensure all relations are objects, not pks after save
- *
- *
- * reloading relations:
- * if you saved a BELONGS_TO relation you have to reload the corresponding HAS_ONE relation on the object you set.
- * if you saved a...
- *
- *
- *
  * Limitations:
- * - This will only work for AR that have PrimaryKey defined!
+ * - currently does not support composite primary keys
+ * - currently handles all existing relations, will add support for limitation shortly
  * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
  *
- * @property CActiveRecord $owner
+ * @property CActiveRecord $owner The owner AR that this behavior is attached to.
  *
  * @author Carsten Brandt <mail@cebe.cc>
  * @package yiiext.behaviors.activeRecordRelation
@@ -267,7 +247,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	}
 
 	/**
-	 * converts an array of AR objects to primary keys
+	 * converts an array of AR objects or primary keys to only primary keys
 	 *
 	 * @throws CDbException
 	 * @param CActiveRecord[] $records
@@ -286,7 +266,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	}
 
 	/**
-	 * converts an array of primary keys to AR objects
+	 * converts an array of AR objects or primary keys to only AR objects
 	 *
 	 * @throws CDbException
 	 * @param CActiveRecord[] $pks
