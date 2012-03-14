@@ -72,15 +72,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		if (\Yii::app()===null) {
 			\Yii::createWebApplication(array(
 			    'basePath'=>$basePath,
-				'components' => array(
-					'db' => array(
-						'connectionString' => 'sqlite:'.$this->db,
-					)
-				)
 			));
 		}
-		\Yii::app()->db->connectionString = 'sqlite:'.$this->db;
-		\Yii::app()->db->active = false;
+		\CActiveRecord::$db=null;
+		\Yii::app()->setComponent('db', new \CDbConnection('sqlite:'.$this->db));
 
 		// create db
 		$this->migration = new EActiveRecordRelationBehaviorTestMigration();
@@ -103,6 +98,7 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	/**
 	 * dataprovider that lists possible configuration options for foreign keys, so
 	 * we make sure to have our models configured in many ways and it still works
+	 * @return array (configType, transactional)
 	 */
 	public function fkConfigurationProvider()
 	{
@@ -115,7 +111,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		// @todo mix them!
 		$configs = array();
 		foreach($configOptions as $option) {
-			$configs[] = array(array('Profile'=>$option, 'User'=>$option, 'Post'=>$option, 'Category'=>$option));
+			$configs[] = array(array('Profile'=>$option, 'User'=>$option, 'Post'=>$option, 'Category'=>$option), true);
+			$configs[] = array(array('Profile'=>$option, 'User'=>$option, 'Post'=>$option, 'Category'=>$option), false);
 		}
 		return $configs;
 	}
@@ -128,14 +125,35 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		Category::$configurationType = $config['Category'];
 	}
 
+	protected function startTransaction($t)
+	{
+		$this->assertNull(\Yii::app()->db->currentTransaction, 'there shouldn\'t be a transaction at start');
+		if ($t) {
+			\Yii::app()->db->beginTransaction();
+			$this->assertNotNull(\Yii::app()->db->currentTransaction, 'there should be a transaction after beginTransaction');
+		}
+	}
+
+	protected function endTransaction($t)
+	{
+		if ($t) {
+			$this->assertNotNull(\Yii::app()->db->currentTransaction, 'there should be a transaction, we created one at start');
+			\Yii::app()->db->currentTransaction->commit();
+			$this->assertNull(\Yii::app()->db->currentTransaction, 'there shouldn\'t be a transaction after commit');
+		} else {
+			$this->assertNull(\Yii::app()->db->currentTransaction, 'there shouldn\'t be a transaction anymore, behavior should have committed or rolledBack');
+		}
+	}
+
 	/**
 	 * test creation of AR and assigning a relation with BELONGS_TO
 	 *
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testBelongsTo($config)
+	public function testBelongsTo($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$john = $this->getJohn();
 		$p = new Post();
@@ -172,6 +190,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertEquals($p->author_id, $jane->id);
 		$this->assertNotNull($p->author);
 		$this->assertEquals($p->author->id, $jane->id);
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
@@ -180,9 +200,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 *
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasOne($config)
+	public function testHasOne($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		// check if the normal thing works
 		$john = $this->getJohn();
@@ -250,6 +271,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$john->refresh();
 		$this->assertNull($john->profile);
 		$p->refresh();*/
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
@@ -258,9 +281,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 *
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasManyPk($config)
+	public function testHasManyPk($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$author = $this->getJohn();
 		$this->assertSaveSuccess($author);
@@ -314,6 +338,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertEquals(0, count($author->posts));
 		$author->refresh();
 		$this->assertEquals(0, count($author->posts));
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
@@ -322,9 +348,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 *
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testHasManyObject($config)
+	public function testHasManyObject($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$author = $this->getJohn();
 		$this->assertSaveSuccess($author);
@@ -386,6 +413,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertEquals(0, count($author->posts));
 		$author->refresh();
 		$this->assertEquals(0, count($author->posts));
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
@@ -451,9 +480,10 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 *
 	 * @dataProvider manymanyData
 	 */
-	public function testManyMany($postsAsPk, $modulo, $config)
+	public function testManyMany($postsAsPk, $modulo, $config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		if ($postsAsPk) { // first with pk data
 			$posts=$this->getPosts(10, true);
@@ -512,47 +542,57 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 		// end real test, checking untouched
 		$this->afterManyMany($un1, $un2);
+		$this->endTransaction($transactional);
 	}
 
 	/**
 	 * @expectedException CDbException
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testManyManyException($config)
+	public function testManyManyException($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$cat = new Category();
 		$cat->posts = 1;
 		$cat->save();
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
 	 * @expectedException CDbException
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testYiiException1($config)
+	public function testYiiException1($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$cat = new Category();
 		$cat->broken = true;
 		$cat->posts = array();
 		$cat->save();
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
 	 * @expectedException CDbException
 	 * @dataProvider fkConfigurationProvider
 	 */
-	public function testYiiException2($config)
+	public function testYiiException2($config, $transactional)
 	{
 		$this->setConfig($config);
+		$this->startTransaction($transactional);
 
 		$cat = new Category();
 		$this->migration->dropRelationTable();
 		$cat->posts = array();
 		$cat->save();
+
+		$this->endTransaction($transactional);
 	}
 
 	/**
