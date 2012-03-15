@@ -35,3 +35,9 @@ for example if you set $model->author_id it will have no effect since ARRelation
 
 #Exceptions explained
 
+throw new CDbException('You can not save a record that has new related records!');
+throw new CDbException('You can not save a record that has new related records!');
+throw new CDbException('You can not save a record that has new related records!');
+throw new CDbException('A HAS_MANY relation needs to be an array of records or primary keys!');
+throw new CDbException('A MANY_MANY relation needs to be an array of records or primary keys!');
+throw new CDbException('Related record with primary key "'.print_r($pk,true).'" does not exist!');
