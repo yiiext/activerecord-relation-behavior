@@ -327,6 +327,8 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 * the first 7 lines are copied from CActiveFinder:561-568
 	 * https://github.com/yiisoft/yii/blob/2353e0adf98c8a912f0faf29cc2558c0ccd6fec7/framework/db/ar/CActiveFinder.php#L561
 	 *
+	 * @todo this method should be removed and using code should implement solution of https://github.com/yiisoft/yii/issues/508 when it is fixed
+	 *
 	 * @throws CDbException
 	 * @param string $name name of the relation
 	 * @param array $relation relation definition
