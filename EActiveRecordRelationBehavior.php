@@ -216,12 +216,16 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 						$newRelatedRecords=$this->primaryKeysToObjects($newRelatedRecords, $relation[1]);
 						$newPKs=$this->objectsToPrimaryKeys($newRelatedRecords);
 
-						// @todo add support for composite primary keys
 						// update all not anymore related records
-						$criteria=new CDbCriteria();
-						$criteria->addNotInCondition(CActiveRecord::model($relation[1])->tableSchema->primaryKey, $newPKs)
-								 ->addColumnCondition(array($relation[2]=>$this->owner->getPrimaryKey()));
-						CActiveRecord::model($relation[1])->updateAll(array($relation[2]=>null), $criteria);
+						$criteria=new ECompositeDbCriteria();
+						$criteria->addNotInCondition(CActiveRecord::model($relation[1])->tableSchema->primaryKey, $newPKs);
+						// @todo add support for composite primary keys
+						$criteria->addColumnCondition(array($relation[2]=>$this->owner->getPrimaryKey()));
+						if (CActiveRecord::model($relation[1])->tableSchema->getColumn($relation[2])->allowNull) {
+							CActiveRecord::model($relation[1])->updateAll(array($relation[2]=>null), $criteria);
+						} else {
+							CActiveRecord::model($relation[1])->deleteAll($criteria);
+						}
 
 						/** @var CActiveRecord $record */
 						foreach($newRelatedRecords as $record) {
@@ -349,5 +353,74 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 		$fks=preg_split('/\s*,\s*/',$matches[2],-1,PREG_SPLIT_NO_EMPTY);
 
 		return array($joinTable, $fks);
+	}
+}
+
+/**
+ * Extension of CDbCriteria that adds support for composite pks to conditions
+ *
+ * @author Carsten Brandt <mail@cebe.cc>
+ * @package yiiext.behaviors.activeRecordRelation
+ */
+class ECompositeDbCriteria extends CDbCriteria
+{
+	/**
+	 * Adds support for composite keys if first param is array
+	 *
+	 * for further details {@see CDbCriteria::addInCondition}
+	 *
+	 * @param $column
+	 * @param $values
+	 * @param string $operator
+	 * @return CDbCriteria
+	 */
+	public function addInCondition($column,$values,$operator='AND')
+	{
+		if (is_array($column)) {
+			return $this->addCondition(
+				$this->createCompositeInCondition($column, $values),
+				$operator
+			);
+		}
+		return parent::addInCondition($column,$values,$operator);
+	}
+
+	/**
+	 * Adds support for composite keys if first param is array
+	 *
+	 * for further details {@see CDbCriteria::addNotInCondition}
+	 *
+	 * @param $column
+	 * @param $values
+	 * @param string $operator
+	 * @return CDbCriteria
+	 */
+	public function addNotInCondition($column,$values,$operator='AND')
+	{
+		if (is_array($column)) {
+			return $this->addCondition(
+				'NOT '.$this->createCompositeInCondition($column, $values),
+				$operator
+			);
+		}
+		parent::addNotInCondition($column,$values,$operator);
+	}
+
+	private function createCompositeInCondition($columns,$values)
+	{
+		if(count($values)<1)
+			return '0=1'; // 0=1 is used because in MSSQL value alone can't be used in WHERE
+
+		$sql1 = array();
+		foreach($values as $value) {
+			$sql2 = array();
+			foreach($columns as $column) {
+				$sql2[] = $column.'='.self::PARAM_PREFIX.self::$paramCount;
+				$this->params[self::PARAM_PREFIX.self::$paramCount++]=$value[$column];
+			}
+			$sql1[] = implode(' AND ',$sql2);
+		}
+
+		return '(('.implode(') OR (',$sql1).'))';
 	}
 }
