@@ -11,6 +11,8 @@
 /**
  * EActiveRecordRelationBehavior adds the possiblity to handle activerecord relations more intuitively
  *
+ * @todo use AR->hasRelated($name)
+ *
  * For details on how to use it please refer to the README.* files that ship with it.
  *
  * Inspired by and put together the awesomeness of the following yii extensions:
