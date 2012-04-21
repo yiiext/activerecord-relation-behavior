@@ -94,7 +94,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 				// attribute of $this->owner has to be changed
 				case CActiveRecord::BELONGS_TO:
 
-					if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+					if (!$this->isRelationSupported($relation))
 						break;
 
 					$pk=null;
@@ -113,6 +113,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					if (!is_array($pk)) {
 						$this->owner->setAttribute($relation[2], $pk);
 					}
+
 				break;
 			}
 		}
@@ -150,7 +151,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					 */
 					case CActiveRecord::MANY_MANY:
 
-						if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+						if (!$this->isRelationSupported($relation))
 							break;
 
 						Yii::trace('updating MANY_MANY table for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
@@ -194,10 +195,14 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					case CActiveRecord::HAS_MANY:
 					case CActiveRecord::HAS_ONE:
 
-						if (isset($relation['through'])) // do not do anything with relations defined with 'through'
+						if (!$this->isRelationSupported($relation))
 							break;
 
-						Yii::trace('updating '.(($relation[0]==CActiveRecord::HAS_ONE)?'HAS_ONE':'HAS_MANY').' foreign-key field for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
+						Yii::trace(
+							'updating '.(($relation[0]==CActiveRecord::HAS_ONE)?'HAS_ONE':'HAS_MANY').
+							' foreign-key field for relation '.get_class($this->owner).'.'.$name,
+							'system.db.ar.CActiveRecord'
+						);
 
 						$newRelatedRecords=$this->owner->getRelated($name, false);
 
@@ -250,6 +255,25 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			// re-throw exception
 			throw $e;
 		}
+	}
+
+	/**
+	 * do not do anything with relations defined with 'through' or have limiting 'condition'/'scopes' defined
+	 *
+	 * @param array $relation
+	 * @return bool
+	 */
+	protected function isRelationSupported($relation)
+	{
+		// @todo not sure about 'together', also check for joinType
+		// @todo not sure what to do if limit/offset is set
+		return !isset($relation['on']) &&
+			   !isset($relation['through']) &&
+			   !isset($relation['condition']) &&
+			   !isset($relation['group']) &&
+			   !isset($relation['join']) &&
+			   !isset($relation['having']) &&
+			   !isset($relation['scopes']);
 	}
 
 	/**
@@ -358,6 +382,8 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 
 /**
  * Extension of CDbCriteria that adds support for composite pks to conditions
+ *
+ * @todo CDbCommandBuilder::createInCondition() supports composite pk, check if we can use it
  *
  * @author Carsten Brandt <mail@cebe.cc>
  * @package yiiext.behaviors.activeRecordRelation
