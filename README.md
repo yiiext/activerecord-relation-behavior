@@ -130,9 +130,9 @@ You have to call `->save()` on all new records before saving the related record.
 
 You can only assing arrays to HAS_MANY and MANY_MANY relations, assigning a single record to a ..._MANY relation is not possible.
 
-### "Related record with primary key "'.print_r($pk,true).'" does not exist!"
+### "Related record with primary key "X" does not exist!"
 
-You tried to assign a primary key value to a relation that does not exist in your database.
+You tried to assign primary key value _X_ to a relation, but _X_ does not exist in your database.
 
 
 ## Feature comparison
