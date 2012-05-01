@@ -243,13 +243,14 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	protected function isRelationSupported($relation)
 	{
 		// @todo not sure about 'together', also check for joinType
-		// @todo not sure what to do if limit/offset is set
 		return !isset($relation['on']) &&
 			   !isset($relation['through']) &&
 			   !isset($relation['condition']) &&
 			   !isset($relation['group']) &&
 			   !isset($relation['join']) &&
 			   !isset($relation['having']) &&
+			   !isset($relation['limit']) && // @todo not sure what to do if limit/offset is set
+			   !isset($relation['offset']) &&
 			   !isset($relation['scopes']);
 	}
 
@@ -282,7 +283,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 */
 	protected function primaryKeysToObjects($pks, $className)
 	{
-		// @todo increase performance by running on query with findAllByPk()
+		// @todo increase performance by running one query with findAllByPk()
 		$records=array();
 		foreach($pks as $pk) {
 			$record=$pk;
