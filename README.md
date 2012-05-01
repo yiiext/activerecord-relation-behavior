@@ -1,7 +1,7 @@
 # ActiveRecord Relation Behavior
 
 This extension is inspired by all the yii extensions that aim to improve saving of related records.
-It puts together the awesomeness of all the extensions mentionend below (see headline "comparison").
+It puts together the awesomeness of all the extensions mentionend below (see headline "Feature comparison").
 It comes with 100% test coverage and well structured and clean code so it can savely be used in enterprise production enviroment.
 
 
@@ -103,22 +103,12 @@ Somewhere in our application code we can do:
 ```
 
 
-## Run the unit test
-
-This behavior is covered by unit tests with 100% code coverage (ECompositeDbCriteria is currently not covered since composite pks are not fully supported yet).
-To run the unit tests you need [phpunit](https://github.com/sebastianbergmann/phpunit#readme) installed
-and the test class requires php 5.3 or above.
-
-1. make sure yii framework is available under ./yii/framework
-   you can do this by
-   - cloning the yii git repo with `git clone https://github.com/yiisoft/yii.git yii`
-   - or linking existing yii directory here with `ln -s ../../path/to/yii yii`
-2. run `phpunit EActiveRecordRelationBehaviorTest.php` or if you want coverage information in html,
-   run `phpunit --coverage-html tmp/coverage EActiveRecordRelationBehaviorTest.php`
-
-
 ## Some things you should care about...
 
+* once you use this behavior you can not set relations by setting the foreign key attributes anymore.
+  For example if you set `$model->author_id` it will have no effect since ARRelationBehavior will overwrite it
+  with null if there is no related record or set it to related records primary key.
+  Instead simply assign the value to the relation itself: `$model->author = 1;` / `$model->author = null;`
 * relations will not be refreshed after saving, so if you only set primary keys there are no objects yet.
   Call `$model->reload()` to force reloading of related records. Or load related records with forcing reload:
   `$model->getRelated('relationName',true)`.
@@ -128,12 +118,21 @@ and the test class requires php 5.3 or above.
   `$user->posts` will not be updated automatically (might add this as a feature later).
 
 
-## Things that will not work anymore, when you use this behavior
+## Exceptions explained
 
-* once you use this behavior you can not set relations by setting the foreign key attributes anymore.
-  For example if you set `$model->author_id` it will have no effect since ARRelationBehavior will overwrite it
-  with null if there is no related record or set it to related records primary key.
-  Instead simply assign the value to the relation itself: `$model->author = 1;` / `$model->author = null;`
+### "You can not save a record that has new related records!"
+
+You have assigned a record to a relation which has not been saved (it is not in the database yet).
+Since ActiveRecord Relation Behavior needs its primary key to save it to a relation table, this will not work.
+You have to call `->save()` on all new records before saving the related record.
+
+### "A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"
+
+You can only assing arrays to HAS_MANY and MANY_MANY relations, assigning a single record to a ..._MANY relation is not possible.
+
+### "Related record with primary key "'.print_r($pk,true).'" does not exist!"
+
+You tried to assign a primary key value to a relation that does not exist in your database.
 
 
 ## Feature comparison
@@ -141,7 +140,7 @@ and the test class requires php 5.3 or above.
 Inspired by and put together the awesomeness of the following yii extensions:
 
 - can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
-- cares about relations when records get deleted like eadvancedarbehavior (not yet implemented, see github issue #7)
+- cares about relations when records get deleted like eadvancedarbehavior (not yet implemented, see github [issue #7](https://github.com/yiiext/activerecord-relation-behavior/issues/7))
 - can save BELONGS_TO, HAS_MANY, HAS_ONE like eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
 - saves with transaction and can handle external transactions like with-related-behavior, esaverelatedbehavior and saverbehavior
 - does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted it)
@@ -160,18 +159,19 @@ reviewed but did not take something out:
 - xrelationbehavior          http://www.yiiframework.com/extension/xrelationbehavior
 - save-relations-ar-behavior http://www.yiiframework.com/extension/save-relations-ar-behavior
 
+Many thanks to the authors of these extensions for inpiration and ideas.
 
-## Exceptions explained
 
-### "You can not save a record that has new related records!"
+## Run the unit test
 
-You have assigned an ActiveRecord to a relation which is not saved. Since ARR Behavior needs its primary key to save it
-this will not work.
+This behavior is covered by unit tests with 100% code coverage (ECompositeDbCriteria is currently not covered since composite pks are not fully supported yet).
+To run the unit tests you need [phpunit](https://github.com/sebastianbergmann/phpunit#readme) installed
+and the test class requires php 5.3 or above.
 
-### "A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"
+1. make sure yii framework is available under ./yii/framework
+   you can do this by
+   - cloning the yii git repo with `git clone https://github.com/yiisoft/yii.git yii`
+   - or linking existing yii directory here with `ln -s ../../path/to/yii yii`
+2. run `phpunit EActiveRecordRelationBehaviorTest.php` or if you want coverage information in html,
+   run `phpunit --coverage-html tmp/coverage EActiveRecordRelationBehaviorTest.php`
 
-You can only set HAS_MANY and MANY_MANY relations to array, assigning a single record to a relation is not possible.
-
-### "Related record with primary key "'.print_r($pk,true).'" does not exist!"
-
-You tried to add a primary key value to a relation that is not in your database.
