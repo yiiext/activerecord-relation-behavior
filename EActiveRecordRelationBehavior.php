@@ -22,8 +22,6 @@
  * - currently handles all existing relations, will add support for limitation shortly
  * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
  *
- * @todo use AR->hasRelated($name)
- *
  * @property CActiveRecord $owner The owner AR that this behavior is attached to.
  *
  * @author Carsten Brandt <mail@cebe.cc>
@@ -73,7 +71,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 				// attribute of $this->owner has to be changed
 				case CActiveRecord::BELONGS_TO:
 
-					if (!$this->isRelationSupported($relation))
+					if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
 						break;
 
 					$pk=null;
@@ -130,7 +128,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					 */
 					case CActiveRecord::MANY_MANY:
 
-						if (!$this->isRelationSupported($relation))
+						if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
 							break;
 
 						Yii::trace('updating MANY_MANY table for relation '.get_class($this->owner).'.'.$name,'system.db.ar.CActiveRecord');
@@ -174,7 +172,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					case CActiveRecord::HAS_MANY:
 					case CActiveRecord::HAS_ONE:
 
-						if (!$this->isRelationSupported($relation))
+						if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
 							break;
 
 						Yii::trace(
