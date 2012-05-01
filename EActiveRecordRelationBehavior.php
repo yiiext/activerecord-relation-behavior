@@ -11,39 +11,18 @@
 /**
  * EActiveRecordRelationBehavior adds the possiblity to handle activerecord relations more intuitively
  *
- * @todo use AR->hasRelated($name)
+ * This extension is inspired by and puts together the awesomeness of all the yii extensions
+ * that aim to improve saving of related records.
+ * It allows you to assign related records especially for MANY_MANY relations more easily.
  *
- * For details on how to use it please refer to the README.* files that ship with it.
- *
- * Inspired by and put together the awesomeness of the following yii extensions:
- *
- * - can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
- * - cares about relations when records get deleted like eadvancedarbehavior (*)
- * - can save BELONGS_TO, HAS_MANY, HAS_ONE like eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior
- * - saves with transaction and can handle external transactions like with-related-behavior, esaverelatedbehavior and saverbehavior
- * - does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted it)
- * - validates for array on HAS_MANY and MANY_MANY relation to have more clear semantic
- *
- * (*) not yet implemented, see github issue #7
- *
- * these are the extensions mentioned above
- * - cadvancedarbehavior        http://www.yiiframework.com/extension/cadvancedarbehavior/
- * - eadvancedarbehavior        http://www.yiiframework.com/extension/eadvancedarbehavior
- * - advancedrelationsbehavior  http://www.yiiframework.com/extension/advancedrelationsbehavior
- * - saverbehavior              http://www.yiiframework.com/extension/saverbehavior
- * - with-related-behavior      https://github.com/yiiext/with-related-behavior
- * - CSaveRelationsBehavior     http://code.google.com/p/yii-save-relations-ar-behavior/
- * - esaverelatedbehavior       http://www.yiiframework.com/extension/esaverelatedbehavior
- *
- * reviewed but did not take something out:
- * - xrelationbehavior          http://www.yiiframework.com/extension/xrelationbehavior
- * - save-relations-ar-behavior http://www.yiiframework.com/extension/save-relations-ar-behavior
- *
+ * For details on how to use it, please refer to the README.* files that ship with it.
  *
  * Limitations:
  * - currently does not support composite primary keys
  * - currently handles all existing relations, will add support for limitation shortly
  * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
+ *
+ * @todo use AR->hasRelated($name)
  *
  * @property CActiveRecord $owner The owner AR that this behavior is attached to.
  *
