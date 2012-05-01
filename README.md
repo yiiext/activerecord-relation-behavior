@@ -5,29 +5,29 @@ It puts together the awesomeness of all the extensions mentionend below (see hea
 It comes with 100% test coverage and well structured and clean code so it can savely be used in enterprise production enviroment.
 
 
-# Requirements
+## Requirements
 
-* Yii 1.1.x (currently tested with)
+* Yii 1.1.6 or above
 * As Yii Framework this behavior is compatible with all PHP versions above 5.1.0.
   I try to be at least as backwards compatible as Yii is, which is PHP 5.1.0,
   if there are any problems with php versions, please [report it](https://github.com/yiiext/activerecord-relation-behavior/issues)!
-
-* _You need php 5.3.x or higher to run the unit tests._
 * Behavior will only work for ActiveRecord classes that have primary key defined.
   Make sure to override [primaryKey()](http://www.yiiframework.com/doc/api/1.1/CActiveRecord#primaryKey%28%29-detail) method when your
   table does not define a primary key.
+* _You need php 5.3.x or higher to run the unit tests._
 
 
-# How to install
+## How to install
 
 1. Get the source in one of the following ways:
    * [Download](https://github.com/yiiext/activerecord-relation-behavior/tags) the latest version and place the files under
-     `extensions/yiiext/behaviors/activerecord-relation/` in your application root directory.
+     `extensions/yiiext/behaviors/activerecord-relation/` under your application root directory.
    * Add this repository as a git submodule to your repository by calling
      `git submodule add https://github.com/yiiext/activerecord-relation-behavior.git extensions/yiiext/behaviors/activerecord-relation`
 2. Add it to the models you want to use it with, by adding it to the `behaviors()` method.
 
 ~~~php
+<?php
 public function behaviors()
 {
     return array(
@@ -38,19 +38,19 @@ public function behaviors()
 ~~~
 
 
-# Let the magic begin...
+## Let the magic begin...
 
 We have two ActiveRecord classes (the ones from [Yii definitive guide](http://www.yiiframework.com/doc/guide/1.1/en/database.arr#declaring-relationship)):
 ```php
+<?php
 class Post extends CActiveRecord
 {
     // ...
     public function relations()
     {
         return array(
-            'author'=>array(self::BELONGS_TO, 'User', 'author_id'),
-            'categories'=>array(self::MANY_MANY, 'Category',
-                'tbl_post_category(post_id, category_id)'),
+            'author'     => array(self::BELONGS_TO, 'User',     'author_id'),
+            'categories' => array(self::MANY_MANY,  'Category', 'tbl_post_category(post_id, category_id)'),
         );
     }
 }
@@ -61,8 +61,8 @@ class User extends CActiveRecord
     public function relations()
     {
         return array(
-            'posts'=>array(self::HAS_MANY, 'Post', 'author_id'),
-            'profile'=>array(self::HAS_ONE, 'Profile', 'owner_id'),
+            'posts'   => array(self::HAS_MANY, 'Post',    'author_id'),
+            'profile' => array(self::HAS_ONE,  'Profile', 'owner_id'),
         );
     }
 }
@@ -70,6 +70,7 @@ class User extends CActiveRecord
 
 Somewhere in our application code we can do:
 ```php
+<?php
     $user = new User();
     $user->posts = array(1,2,3);
     $user->save();
@@ -102,9 +103,9 @@ Somewhere in our application code we can do:
 ```
 
 
-# Run the unit test
+## Run the unit test
 
-This behavior is covered by unit test with 100% code coverage (ECompositeDbCriteria is currently not covered since composite pks are not fully supported yet).
+This behavior is covered by unit tests with 100% code coverage (ECompositeDbCriteria is currently not covered since composite pks are not fully supported yet).
 To run the unit tests you need [phpunit](https://github.com/sebastianbergmann/phpunit#readme) installed
 and the test class requires php 5.3 or above.
 
@@ -116,16 +117,18 @@ and the test class requires php 5.3 or above.
    run `phpunit --coverage-html tmp/coverage EActiveRecordRelationBehaviorTest.php`
 
 
-# Some things you should care about...
+## Some things you should care about...
 
 * relations will not be refreshed after saving, so if you only set primary keys there are no objects yet.
   Call `$model->reload()` to force reloading of related records. Or load related records with forcing reload:
   `$model->getRelated('relationName',true)`.
+* This behavior will only work for relations that do not have additional conditions, joins, groups
+  or the like defined since the expected result after setting and saving them is not always clear.
 * if you assigned a record to a BELONGS_TO relation, for example `$post->author = $user;`,
-  $user->posts will not be refreshed automatically (might add this as a feature later).
+  `$user->posts` will not be updated automatically (might add this as a feature later).
 
 
-# Things that will not work anymore, when you use this behavior
+## Things that will not work anymore, when you use this behavior
 
 * once you use this behavior you can not set relations by setting the foreign key attributes anymore.
   For example if you set `$model->author_id` it will have no effect since ARRelationBehavior will overwrite it
@@ -133,7 +136,7 @@ and the test class requires php 5.3 or above.
   Instead simply assign the value to the relation itself: `$model->author = 1;` / `$model->author = null;`
 
 
-# Feature comparison
+## Feature comparison
 
 Inspired by and put together the awesomeness of the following yii extensions:
 
@@ -158,17 +161,17 @@ reviewed but did not take something out:
 - save-relations-ar-behavior http://www.yiiframework.com/extension/save-relations-ar-behavior
 
 
-#Exceptions explained
+## Exceptions explained
 
-## "You can not save a record that has new related records!"
+### "You can not save a record that has new related records!"
 
 You have assigned an ActiveRecord to a relation which is not saved. Since ARR Behavior needs its primary key to save it
 this will not work.
 
-## "A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"
+### "A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"
 
 You can only set HAS_MANY and MANY_MANY relations to array, assigning a single record to a relation is not possible.
 
-## "Related record with primary key "'.print_r($pk,true).'" does not exist!"
+### "Related record with primary key "'.print_r($pk,true).'" does not exist!"
 
 You tried to add a primary key value to a relation that is not in your database.
