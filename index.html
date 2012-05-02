@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Activerecord-relation-behavior : Inspired by and put together the awesomeness of many yii extensions that aim to improve saving of related records. Comes with 100% test coverage and well structured and clean code so it can savely be used in enterprise production enviroment." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Activerecord-relation-behavior</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/yiiext/activerecord-relation-behavior">View on GitHub</a>
+
+          <h1 id="project_title">Activerecord-relation-behavior</h1>
+          <h2 id="project_tagline">Inspired by and put together the awesomeness of many yii extensions that aim to improve saving of related records. Comes with 100% test coverage and well structured and clean code so it can savely be used in enterprise production enviroment.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/yiiext/activerecord-relation-behavior/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/yiiext/activerecord-relation-behavior/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>ActiveRecord Relation Behavior</h1>
+
+<p>This extension is inspired by all the yii extensions that aim to improve saving of related records.
+It allows you to assign related records especially for MANY_MANY relations more easily.
+It puts together the awesomeness of all the extensions mentionend below (see headline "Feature comparison").
+It comes with 100% test coverage and well structured and clean code so it can savely be used in enterprise production enviroment.</p>
+
+<h2>Requirements</h2>
+
+<ul>
+<li>Yii 1.1.6 or above</li>
+<li>As Yii Framework this behavior is compatible with all PHP versions above 5.1.0.
+I try to be at least as backwards compatible as Yii is, which is PHP 5.1.0,
+if there are any problems with php versions, please <a href="https://github.com/yiiext/activerecord-relation-behavior/issues">report it</a>!</li>
+<li>Behavior will only work for ActiveRecord classes that have primary key defined.
+Make sure to override <a href="http://www.yiiframework.com/doc/api/1.1/CActiveRecord#primaryKey%28%29-detail">primaryKey()</a> method when your
+table does not define a primary key.</li>
+<li><em>You need php 5.3.x or higher to run the unit tests.</em></li>
+</ul><h2>How to install</h2>
+
+<ol>
+<li>Get the source in one of the following ways:
+
+<ul>
+<li>
+<a href="https://github.com/yiiext/activerecord-relation-behavior/tags">Download</a> the latest version and place the files under
+<code>extensions/yiiext/behaviors/activerecord-relation/</code> under your application root directory.</li>
+<li>Add this repository as a git submodule to your repository by calling
+<code>git submodule add https://github.com/yiiext/activerecord-relation-behavior.git extensions/yiiext/behaviors/activerecord-relation</code>
+</li>
+</ul>
+</li>
+<li>Add it to the models you want to use it with, by adding it to the <code>behaviors()</code> method.</li>
+</ol><div class="highlight">
+<pre><span class="cp">&lt;?php</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">behaviors</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">'activerecord-relation'</span><span class="o">=&gt;</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">'class'</span><span class="o">=&gt;</span><span class="s1">'ext.yiiext.behaviors.activerecord-relation.EActiveRecordRelationBehavior'</span><span class="p">,</span>
+    <span class="p">);</span>
+<span class="p">}</span>
+</pre>
+</div>
+
+
+<h2>Let the magic begin...</h2>
+
+<p>We have two ActiveRecord classes (the ones from <a href="http://www.yiiframework.com/doc/guide/1.1/en/database.arr#declaring-relationship">Yii definitive guide</a>):</p>
+
+<div class="highlight">
+<pre><span class="cp">&lt;?php</span>
+<span class="k">class</span> <span class="nc">Post</span> <span class="k">extends</span> <span class="nx">CActiveRecord</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">relations</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">'author'</span>     <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="nx">self</span><span class="o">::</span><span class="na">BELONGS_TO</span><span class="p">,</span> <span class="s1">'User'</span><span class="p">,</span>     <span class="s1">'author_id'</span><span class="p">),</span>
+            <span class="s1">'categories'</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="nx">self</span><span class="o">::</span><span class="na">MANY_MANY</span><span class="p">,</span>  <span class="s1">'Category'</span><span class="p">,</span> <span class="s1">'tbl_post_category(post_id, category_id)'</span><span class="p">),</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">User</span> <span class="k">extends</span> <span class="nx">CActiveRecord</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">relations</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">'posts'</span>   <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="nx">self</span><span class="o">::</span><span class="na">HAS_MANY</span><span class="p">,</span> <span class="s1">'Post'</span><span class="p">,</span>    <span class="s1">'author_id'</span><span class="p">),</span>
+            <span class="s1">'profile'</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="nx">self</span><span class="o">::</span><span class="na">HAS_ONE</span><span class="p">,</span>  <span class="s1">'Profile'</span><span class="p">,</span> <span class="s1">'owner_id'</span><span class="p">),</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre>
+</div>
+
+
+<p>Somewhere in our application code we can do:</p>
+
+<div class="highlight">
+<pre><span class="cp">&lt;?php</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">User</span><span class="p">();</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+    <span class="c1">// user is now author of posts 1,2,3</span>
+
+    <span class="c1">// this is equivalent to the last example:</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">User</span><span class="p">();</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span> <span class="o">=</span> <span class="nx">Post</span><span class="o">::</span><span class="na">model</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">findAllByPk</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">));</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+    <span class="c1">// user is now author of posts 1,2,3</span>
+
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span> <span class="o">=</span> <span class="nb">array_merge</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="mi">4</span><span class="p">));</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+    <span class="c1">// user is now also author of post 4</span>
+
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">posts</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+    <span class="c1">// user is not related to any post anymore</span>
+
+    <span class="nv">$post</span> <span class="o">=</span> <span class="nx">Post</span><span class="o">::</span><span class="na">model</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">findByPk</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="nv">$post</span><span class="o">-&gt;</span><span class="na">author</span> <span class="o">=</span> <span class="nx">User</span><span class="o">::</span><span class="na">model</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">findByPk</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+    <span class="nv">$post</span><span class="o">-&gt;</span><span class="na">categories</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nx">Category</span><span class="o">::</span><span class="na">model</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">findByPk</span><span class="p">(</span><span class="mi">5</span><span class="p">));</span>
+    <span class="nv">$post</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+    <span class="c1">// post 2 has now author 1 and belongs to categories 1 and 5</span>
+
+    <span class="c1">// adding a profile to a user:</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">profile</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Profile</span><span class="p">();</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">profile</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span> <span class="c1">// need this to ensure profile got a primary key</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+</pre>
+</div>
+
+
+<h2>Some things you should care about...</h2>
+
+<ul>
+<li>once you use this behavior you can not set relations by setting the foreign key attributes anymore.
+For example if you set <code>$model-&gt;author_id</code> it will have no effect since ARRelationBehavior will overwrite it
+with null if there is no related record or set it to related records primary key.
+Instead simply assign the value to the relation itself: <code>$model-&gt;author = 1;</code> / <code>$model-&gt;author = null;</code>
+</li>
+<li>relations will not be refreshed after saving, so if you only set primary keys there are no objects yet.
+Call <code>$model-&gt;reload()</code> to force reloading of related records. Or load related records with forcing reload:
+<code>$model-&gt;getRelated('relationName',true)</code>.</li>
+<li>This behavior will only work for relations that do not have additional conditions, joins, groups
+or the like defined since the expected result after setting and saving them is not always clear.</li>
+<li>if you assigned a record to a BELONGS_TO relation, for example <code>$post-&gt;author = $user;</code>,
+<code>$user-&gt;posts</code> will not be updated automatically (might add this as a feature later).</li>
+</ul><h2>Exceptions explained</h2>
+
+<h3>"You can not save a record that has new related records!"</h3>
+
+<p>You have assigned a record to a relation which has not been saved (it is not in the database yet).
+Since ActiveRecord Relation Behavior needs its primary key to save it to a relation table, this will not work.
+You have to call <code>-&gt;save()</code> on all new records before saving the related record.</p>
+
+<h3>"A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"</h3>
+
+<p>You can only assing arrays to HAS_MANY and MANY_MANY relations, assigning a single record to a ..._MANY relation is not possible.</p>
+
+<h3>"Related record with primary key "X" does not exist!"</h3>
+
+<p>You tried to assign primary key value <em>X</em> to a relation, but <em>X</em> does not exist in your database.</p>
+
+<h2>Feature comparison</h2>
+
+<p>Inspired by and put together the awesomeness of the following yii extensions:</p>
+
+<ul>
+<li>can save MANY_MANY relations like cadvancedarbehavior, eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior</li>
+<li>cares about relations when records get deleted like eadvancedarbehavior (not yet implemented, see github <a href="https://github.com/yiiext/activerecord-relation-behavior/issues/7">issue #7</a>)</li>
+<li>can save BELONGS_TO, HAS_MANY, HAS_ONE like eadvancedarbehavior, esaverelatedbehavior and advancedrelationsbehavior</li>
+<li>saves with transaction and can handle external transactions like with-related-behavior, esaverelatedbehavior and saverbehavior</li>
+<li>does not touch additional data in MANY_MANY table (cadvancedarbehavior deleted it)</li>
+<li>validates for array on HAS_MANY and MANY_MANY relation to have more clear semantic</li>
+</ul><p>these are the extensions mentioned above</p>
+
+<ul>
+<li>cadvancedarbehavior        <a href="http://www.yiiframework.com/extension/cadvancedarbehavior/">http://www.yiiframework.com/extension/cadvancedarbehavior/</a>
+</li>
+<li>eadvancedarbehavior        <a href="http://www.yiiframework.com/extension/eadvancedarbehavior">http://www.yiiframework.com/extension/eadvancedarbehavior</a>
+</li>
+<li>advancedrelationsbehavior  <a href="http://www.yiiframework.com/extension/advancedrelationsbehavior">http://www.yiiframework.com/extension/advancedrelationsbehavior</a>
+</li>
+<li>saverbehavior              <a href="http://www.yiiframework.com/extension/saverbehavior">http://www.yiiframework.com/extension/saverbehavior</a>
+</li>
+<li>with-related-behavior      <a href="https://github.com/yiiext/with-related-behavior">https://github.com/yiiext/with-related-behavior</a>
+</li>
+<li>CSaveRelationsBehavior     <a href="http://code.google.com/p/yii-save-relations-ar-behavior/">http://code.google.com/p/yii-save-relations-ar-behavior/</a>
+</li>
+<li>esaverelatedbehavior       <a href="http://www.yiiframework.com/extension/esaverelatedbehavior">http://www.yiiframework.com/extension/esaverelatedbehavior</a>
+</li>
+</ul><p>reviewed but did not take something out:</p>
+
+<ul>
+<li>xrelationbehavior          <a href="http://www.yiiframework.com/extension/xrelationbehavior">http://www.yiiframework.com/extension/xrelationbehavior</a>
+</li>
+<li>save-relations-ar-behavior <a href="http://www.yiiframework.com/extension/save-relations-ar-behavior">http://www.yiiframework.com/extension/save-relations-ar-behavior</a>
+</li>
+</ul><p>Many thanks to the authors of these extensions for inpiration and ideas.</p>
+
+<h2>Run the unit test</h2>
+
+<p>This behavior is covered by unit tests with 100% code coverage (ECompositeDbCriteria is currently not covered since composite pks are not fully supported yet).
+To run the unit tests you need <a href="https://github.com/sebastianbergmann/phpunit#readme">phpunit</a> installed
+and the test class requires php 5.3 or above.</p>
+
+<ol>
+<li>make sure yii framework is available under ./yii/framework
+you can do this by
+
+<ul>
+<li>cloning the yii git repo with <code>git clone https://github.com/yiisoft/yii.git yii</code>
+</li>
+<li>or linking existing yii directory here with <code>ln -s ../../path/to/yii yii</code>
+</li>
+</ul>
+</li>
+<li>run <code>phpunit EActiveRecordRelationBehaviorTest.php</code> or if you want coverage information in html,
+run <code>phpunit --coverage-html tmp/coverage EActiveRecordRelationBehaviorTest.php</code>
+</li>
+</ol><h2>FAQ</h2>
+
+<h3>When using a MANY_MANY relation, not changing it in any way and doing save() does it re-save relations or not?</h3>
+
+<p>It uses <code>CActiveRecord::hasRelated()</code> to check if a relation has been
+loaded or set and will only save if this is the case.
+It will re-save if you loaded and did not change, since it is not able
+to detect this.
+But re-saving does not mean entries in MANY_MANY table get deleted and
+re-inserted. It will only run a delete query, that does not match any rows if you
+did not touch records, so no row in db will be touched.</p>
+
+<h3>is it possible to save only related links (n-m table records) without re-saving model?</h3>
+
+<p>Currently not, will add this feature in the future: <a href="https://github.com/yiiext/activerecord-relation-behavior/issues/16">issue #16</a>.</p>
+
+<h3>how can I delete a particular id from many-many relation? do I need to load all related records for this?</h3>
+
+<p>Currently you have to load all and re-assign the array. Will add an api for this; <a href="https://github.com/yiiext/activerecord-relation-behavior/issues/16">issue #16</a>.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Activerecord-relation-behavior maintained by <a href="https://github.com/yiiext">yiiext</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
