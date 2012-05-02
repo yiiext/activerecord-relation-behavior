@@ -176,3 +176,22 @@ and the test class requires php 5.3 or above.
 2. run `phpunit EActiveRecordRelationBehaviorTest.php` or if you want coverage information in html,
    run `phpunit --coverage-html tmp/coverage EActiveRecordRelationBehaviorTest.php`
 
+## FAQ
+
+### When using a MANY_MANY relation, not changing it in any way and doing save() does it re-save relations or not?
+
+It uses `CActiveRecord::hasRelated()` to check if a relation has been
+loaded or set and will only save if this is the case.
+It will re-save if you loaded and did not change, since it is not able
+to detect this.
+But re-saving does not mean entries in MANY_MANY table get deleted and
+re-inserted. It will only run a delete query, that does not match any rows if you
+did not touch records, so no row in db will be touched.
+
+### is it possible to save only related links (n-m table records) without re-saving model?
+
+Currently not, will add this feature in the future: [issue #16](https://github.com/yiiext/activerecord-relation-behavior/issues/16).
+
+### how can I delete a particular id from many-many relation? do I need to load all related records for this?
+
+Currently you have to load all and re-assign the array. Will add an api for this; [issue #16](https://github.com/yiiext/activerecord-relation-behavior/issues/16).
