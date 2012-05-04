@@ -43,6 +43,8 @@ public function behaviors()
 ## Let the magic begin...
 
 We have two ActiveRecord classes (the ones from [Yii definitive guide](http://www.yiiframework.com/doc/guide/1.1/en/database.arr#declaring-relationship)):
+
+
 ```php
 <?php
 class Post extends CActiveRecord
@@ -104,6 +106,21 @@ Somewhere in our application code we can do:
     $user->save();
 ```
 
+## You can also…
+
+Enable/Disable/Reset the relations to save. To do this you can use:
+ 
+`$model->withoutRelations('relation name 1', 'relation name 2',…)->save()`
+
+…will save all `$model` relations except the ones passed to the scope.
+
+`$model->withRelations('relation name 1', 'relation name 2',…)->save()`
+
+…will save only the `$model` relations passed to the scope
+
+`$model->resetRelations()->save()`
+
+…will clear the former scopes, and save all the relations of `$model`
 
 ## Some things you should care about...
 
