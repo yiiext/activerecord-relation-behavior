@@ -41,6 +41,11 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 * @var CDbTransaction
 	 */
 	private $_transaction;
+	/**
+	 * Holds active relations to be saved. null means all relations.
+	 */
+	protected $_enabledRelations;
+
 
 	/**
 	 * @return CDbTransaction The transaction that is used while updating the database.
@@ -83,7 +88,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 */
 	public function beforeValidate($event)
 	{
-		foreach($this->owner->relations() as $name => $relation)
+		foreach($this->getRelations() as $name => $relation)
 		{
 			switch($relation[0]) // relation type such as BELONGS_TO, HAS_ONE, HAS_MANY, MANY_MANY
 			{
@@ -116,7 +121,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 		if ($this->useTransaction && $this->owner->dbConnection->currentTransaction===null)
 			$this->_transaction=$this->owner->dbConnection->beginTransaction();
 
-		foreach($this->owner->relations() as $name => $relation)
+		foreach($this->getRelations() as $name => $relation)
 		{
 			switch($relation[0]) // relation type such as BELONGS_TO, HAS_ONE, HAS_MANY, MANY_MANY
 			{
@@ -146,7 +151,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			/** @var CDbCommandBuilder $commandBuilder */
 			$commandBuilder=$this->owner->dbConnection->commandBuilder;
 
-			foreach($this->owner->relations() as $name => $relation)
+			foreach($this->getRelations() as $name => $relation)
 			{
 				switch($relation[0]) // relation type such as BELONGS_TO, HAS_ONE, HAS_MANY, MANY_MANY
 				{
@@ -252,6 +257,9 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			// commit internal transaction if one exists
 			if ($this->_transaction!==null)
 				$this->_transaction->commit();
+
+			// reset state after save() is finished
+			$this->resetRelations();
 
 		} catch(Exception $e) {
 			// roll back internal transaction if one exists
@@ -416,6 +424,55 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 		$fks=preg_split('/\s*,\s*/',$matches[2],-1,PREG_SPLIT_NO_EMPTY);
 
 		return array($joinTable, $fks);
+	}
+
+	/**
+	 * Resets the enabled relations to default (all relations)
+	 * A Scope-like method for save()
+	 * @return CActiveRecord The ActiveRecord instance itself to allow method chaining.
+	 */
+	public function resetRelations()
+	{
+		$this->_enabledRelations=null;
+		return $this->owner;
+	}
+	
+	/**
+	 * Sets the enabled relations to be used for saving
+	 * A Scope-like method for save()
+	 * @param string $relation relation names to be used names
+	 * @param string ... can have multiple arguments
+	 * @return CActiveRecord The ActiveRecord instance itself to allow method chaining.
+	 */
+	public function withRelations()
+	{
+		$this->_enabledRelations=func_get_args();
+		return $this->owner;
+	}
+	
+	/**
+	 * Exclude relations from saving
+	 * A Scope-like method for save()
+	 * @param string $relation relation names to be used names
+	 * @param string ... can have multiple arguments
+	 * @return CActiveRecord The ActiveRecord instance itself to allow method chaining.
+	 */
+	public function withoutRelations()
+	{
+		$this->_enabledRelations=array_diff(array_keys($this->owner->relations()),func_get_args());
+		return $this->owner;
+	}
+	
+	/**
+	 *	Return the enabled relations
+	 *	@return Array filtered owner relations
+	 */
+	protected function getRelations()
+	{
+		if (is_null($this->_enabledRelations))
+			return $this->owner->relations();
+
+		return array_intersect_key($this->owner->relations(), array_flip($this->_enabledRelations));
 	}
 }
 
