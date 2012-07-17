@@ -50,7 +50,7 @@ require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
  */
 class EActiveRecordRelationBehaviorTest extends \CTestCase
 {
-	public $db;
+	public $dbFile;
 	/** @var EActiveRecordRelationBehaviorTestMigration */
 	protected $migration;
 
@@ -65,9 +65,6 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		if (!file_exists($basePath.'/runtime'))
 			mkdir($basePath.'/runtime', 0777, true);
 
-		if (!$this->db)
-			$this->db = $basePath.'/test.'.uniqid(time()).'.db';
-
 		// create webapp
 		if (\Yii::app()===null) {
 			\Yii::createWebApplication(array(
@@ -75,7 +72,19 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 			));
 		}
 		\CActiveRecord::$db=null;
-		\Yii::app()->setComponent('db', new \CDbConnection('sqlite:'.$this->db));
+
+		if (!isset($_ENV['DB']) || $_ENV['DB'] == 'sqlite')
+		{
+			if (!$this->dbFile)
+				$this->dbFile = $basePath.'/test.'.uniqid(time()).'.db';
+			\Yii::app()->setComponent('db', new \CDbConnection('sqlite:'.$this->dbFile));
+		}
+		elseif ($_ENV['DB'] == 'mysql')
+			\Yii::app()->setComponent('db', new \CDbConnection('mysql:dbname=test;host=localhost', 'root'));
+		elseif ($_ENV['DB'] == 'pgsql')
+			\Yii::app()->setComponent('db', new \CDbConnection('pqsql:dbname=test;host=localhost', 'postgres'));
+		else
+			throw new \Exception('Unknown db. Only sqlite, mysql and pgsql are valid.');
 
 		// create db
 		$this->migration = new EActiveRecordRelationBehaviorTestMigration();
@@ -89,9 +98,9 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	 */
 	public function tearDown()
 	{
-		if (!$this->hasFailed() && $this->migration && $this->db) {
+		if (!$this->hasFailed() && $this->migration && $this->dbFile) {
 			$this->migration->down();
-			unlink($this->db);
+			unlink($this->dbFile);
 		}
 	}
 
