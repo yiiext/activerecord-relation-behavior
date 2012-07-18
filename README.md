@@ -1,4 +1,4 @@
-# ActiveRecord Relation Behavior
+# ActiveRecord Relation Behavior [![Build Status](https://secure.travis-ci.org/yiiext/activerecord-relation-behavior.png)](http://travis-ci.org/yiiext/activerecord-relation-behavior])
 
 This extension is inspired by all the yii extensions that aim to improve saving of related records.
 It allows you to assign related records especially for MANY_MANY relations more easily.
