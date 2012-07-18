@@ -5,8 +5,8 @@ php:
   - 5.4
 
 env:
-#  - DB=mysql
-#  - DB=pgsql
+  - DB=mysql
+  - DB=pgsql
   - DB=sqlite
 
 # execute any number of scripts before the test run, custom env's are available as variables
