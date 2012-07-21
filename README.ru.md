@@ -180,19 +180,17 @@ class User extends CActiveRecord
 
 ## ЧаВО
 
-### When using a MANY_MANY relation, not changing it in any way and doing save() does it re-save relations or not?
+### При использовании реляции типа MANY_MANY, не изменяя её и вызывая save() пересохраняются ли реляции или нет?
 
-It uses `CActiveRecord::hasRelated()` to check if a relation has been
-loaded or set and will only save if this is the case.
-It will re-save if you loaded and did not change, since it is not able
-to detect this.
-But re-saving does not mean entries in MANY_MANY table get deleted and
-re-inserted. It will only run a delete query, that does not match any rows if you
-did not touch records, so no row in db will be touched.
+Поведение использует `CActiveRecord::hasRelated()` для проверки того, была ли загружена или установлена реляция
+и сохранит только в этом случае. Оно пересохранит в том случае, если вы загрузили реляцию и не меняли её,
+потому как поведение не может это определить точно. Но пересохранение не означает, что записи в MANY_MANY
+таблице удаляются и вставляются заново полностью. SQL запрос удаления вызывается только для тех записей, которых
+нет в реляции. Если вы не трогали записи, то и ничего не удалится.
 
-### is it possible to save only related links (n-m table records) without re-saving model?
+### Возможно ли сохранять только связующие ссылки (n-m записи в таблице) без пересохранения моделей?
 
-Currently not, will add this feature in the future: [issue #16](https://github.com/yiiext/activerecord-relation-behavior/issues/16).
+Сейчас нет, но этот функционал будет добавлен в будушем: [тикет #16](https://github.com/yiiext/activerecord-relation-behavior/issues/16).
 
 ### Как я могу удалить определенный ID из MANY_MANY реляции? Мне нужно удалять все реляционные записи для этого?
 
