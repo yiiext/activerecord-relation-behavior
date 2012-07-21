@@ -126,19 +126,19 @@ class User extends CActiveRecord
 
 ## Описание исключений
 
-### "You can not save a record that has new related records!"
+### You can not save a record that has new related records!
 
 Отношению была присвоена ещё не сохранённая запись (её не существует в базе данных). Это не будет работать, потому как
 поведение ActiveRecord Relation для сохранения связанных данных требует наличия у них первичного ключа. Перед
 присваиванием множества записей к какому-либо отношению необходимо это множество полностью сохранить вызовом метода
 `save()` у каждой модели.
 
-### "A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!"
+### A HAS_MANY/MANY_MANY relation needs to be an array of records or primary keys!
 
 Отношениям HAS_MANY и MANY_MANY можно присваивать только массивы. Присваивание одиночных записей (не массивов) к таким
 отношениям невозможно и лишено смысла.
 
-### "Related record with primary key "X" does not exist!"
+### Related record with primary key "X" does not exist!
 
 Исключение вызвано тем фактом, что вы попытались присвоить отношению несуществующий в базе данных первичный ключ.
 
