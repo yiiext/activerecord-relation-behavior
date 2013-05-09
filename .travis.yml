@@ -13,7 +13,7 @@ env:
 before_script:
   - git clone --depth=1 https://github.com/yiisoft/yii.git yii
   - if [[ "$DB" == "pgsql" ]]; then psql -c "CREATE DATABASE test;" -U postgres; fi
-  - if [[ "$DB" == "mysql" ]]; then mysql -e "CREATE DATABASE test;" -uroot; fi
+  - if [[ "$DB" == "mysql" ]]; then mysql -e "CREATE DATABASE IF NOT EXISTS test;" -uroot; fi
 
 script: phpunit --colors --coverage-text EActiveRecordRelationBehaviorTest.php
 
