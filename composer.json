@@ -4,6 +4,7 @@
     "keywords": ["yii", "extension", "active-record"],
     "homepage": "https://github.com/yiiext/activerecord-relation-behavior",
     "type": "yii-extension",
+    "license": "BSD-3-Clause",
     "authors": [
         {
             "name": "Carsten Brandt",
