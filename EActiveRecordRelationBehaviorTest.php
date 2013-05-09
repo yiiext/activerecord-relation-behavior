@@ -622,7 +622,7 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 			$this->assertEquals($failedAttributes, array_keys($ar->getErrors()));
 	}
 
-	public static function assertEquals($expected, $actual, $message = '', $delta = 0, $maxDepth = 10)
+	public static function assertEquals($expected, $actual, $message = '', $delta = 0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
 	{
 		if ($expected instanceof \CActiveRecord) {
 			/** @var \CActiveRecord $expected */
@@ -633,7 +633,7 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 			self::assertNotNull($expected, 'Failed asserting that two ActiveRecords are equal. First is null. '.$message);
 			self::assertTrue($actual->equals($expected), 'Failed asserting that two ActiveRecords are equal. '.$message);
 		} else {
-			parent::assertEquals($expected, $actual, $message, $delta, $maxDepth);
+			parent::assertEquals($expected, $actual, $message, $delta, $maxDepth, $canonicalize, $ignoreCase);
 		}
 	}
 
