@@ -4,7 +4,7 @@
  *
  * @author Carsten Brandt <mail@cebe.cc>
  * @link http://yiiext.github.com/extensions/activerecord-relation-behavior/index.html
- * @copyright Copyright &copy; 2012 Carsten Brandt
+ * @copyright Copyright &copy; 2013 Carsten Brandt
  * @license https://github.com/yiiext/activerecord-relation-behavior/blob/master/LICENSE#L1
  */
 
@@ -30,10 +30,10 @@
 class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 {
 	/**
-	 * @var bool set this to false if you dbms does not support transaction
-	 * This behavior will use transactions to save MANY_MANY tables to ensure consistent data
-	 * If you start a transaction yourself you can use without anything to configure. this behavior will
-	 * run inside your transaction without touching it
+	 * @var bool set this to false if your dbms does not support transactions.
+	 * This behavior will use transactions to save MANY_MANY tables to ensure consistent data.
+	 * If you start a transaction yourself you can use it without configuring anything. This behavior will
+	 * run inside your transaction without touching it.
 	 */
 	public $useTransaction=true;
 	/** @var CDbTransaction */
