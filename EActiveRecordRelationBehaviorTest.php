@@ -604,6 +604,24 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->endTransaction($transactional);
 	}
 
+	public function testValidationBeforeSave()
+	{
+		$model = new Profile();
+		$model->disableOwnerRule = true;
+		$model->owner = new User();
+		$this->assertTrue($model->validate());
+	}
+
+	/**
+	 * @expectedException CDbException
+	 */
+	public function testValidationBeforeSaveFail()
+	{
+		$model = new Profile();
+		$model->owner = new User();
+		$this->assertTrue($model->validate());
+	}
+
 	/**
 	 * @param \CActiveRecord $ar
 	 */
@@ -768,6 +786,7 @@ class EActiveRecordRelationBehaviorTestMigration extends \CDbMigration
 class Profile extends \CActiveRecord
 {
 	public static $configurationType='normal';
+	public $disableOwnerRule=false;
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -799,10 +818,12 @@ class Profile extends \CActiveRecord
 	 */
 	public function rules()
 	{
-		return array(
-			array('owner_id', 'required'),
-			array('photo, website', 'safe'),
-		);
+		$rules = array();
+		if (!$this->disableOwnerRule) {
+			$rules[] = array('owner_id', 'required');
+		}
+		$rules[] = array('photo, website', 'safe');
+		return $rules;
 	}
 
 	/**

@@ -71,25 +71,14 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 				// attribute of $this->owner has to be changed
 				case CActiveRecord::BELONGS_TO:
 
+					// when relation attribute will not be validated,
+					// we do not need to populate it at this point, will do it in beforeSave()
+					if (count($this->owner->getValidators($relation[2])) == 0)
+						break;
 					if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
 						break;
 
-					$pk=null;
-					if (($related=$this->owner->getRelated($name, false))!==null) {
-						if (is_object($related)) {
-							/** @var CActiveRecord $related */
-							if ($related->isNewRecord)
-								throw new CDbException('You can not save a record that has new related records!');
-							$pk=$related->getPrimaryKey();
-						} else {
-							$pk=$related;
-						}
-					}
-
-					// @todo add support for composite primary keys
-					if (!is_array($pk)) {
-						$this->owner->setAttribute($relation[2], $pk);
-					}
+					$this->populateBelongsToAttribute($name, $relation);
 
 				break;
 			}
@@ -105,6 +94,24 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 		// ensure transactions
 		if ($this->useTransaction && $this->owner->dbConnection->currentTransaction===null)
 			$this->_transaction=$this->owner->dbConnection->beginTransaction();
+
+		foreach($this->owner->relations() as $name => $relation)
+		{
+			switch($relation[0]) // relation type such as BELONGS_TO, HAS_ONE, HAS_MANY, MANY_MANY
+			{
+				// BELONGS_TO: if the relationship between table A and B is one-to-many, then B belongs to A
+				//             (e.g. Post belongs to User);
+				// attribute of $this->owner has to be changed
+				case CActiveRecord::BELONGS_TO:
+
+					if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
+						break;
+
+					$this->populateBelongsToAttribute($name, $relation);
+
+				break;
+			}
+		}
 	}
 
 	/**
@@ -231,6 +238,31 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 				$this->_transaction->rollback();
 			// re-throw exception
 			throw $e;
+		}
+	}
+
+	/**
+	 * Populates the BELONGS_TO relations attribute with the pk of the related model.
+	 * @param string $name the relation name
+	 * @param array $relation the relation config array
+	 */
+	protected function populateBelongsToAttribute($name, $relation)
+	{
+		$pk=null;
+		if (($related=$this->owner->getRelated($name, false))!==null) {
+			if (is_object($related)) {
+				/** @var CActiveRecord $related */
+				if ($related->isNewRecord)
+					throw new CDbException('You can not save a record that has new related records!');
+				$pk=$related->getPrimaryKey();
+			} else {
+				$pk=$related;
+			}
+		}
+
+		// @todo add support for composite primary keys
+		if (!is_array($pk)) {
+			$this->owner->setAttribute($relation[2], $pk);
 		}
 	}
 
