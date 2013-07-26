@@ -34,6 +34,7 @@ public function behaviors()
     return array(
         'activerecord-relation'=>array(
             'class'=>'ext.yiiext.behaviors.activerecord-relation.EActiveRecordRelationBehavior',
+        ),
     );
 }
 ~~~
