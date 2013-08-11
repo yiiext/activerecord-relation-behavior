@@ -96,7 +96,7 @@ Somewhere in our application code we can do:
     $post->author = User::model()->findByPk(1);
     $post->categories = array(2, Category::model()->findByPk(5));
     $post->save();
-    // post 2 has now author 1 and belongs to categories 1 and 5
+    // post 2 has now author 1 and belongs to categories 2 and 5
 
     // adding a profile to a user:
     $user->profile = new Profile();
