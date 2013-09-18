@@ -23,6 +23,7 @@
  * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
  *
  * @property CActiveRecord $owner The owner AR that this behavior is attached to.
+ * @property CDbTransaction $transaction The transaction that is used while updating the database.
  *
  * @author Carsten Brandt <mail@cebe.cc>
  * @package yiiext.behaviors.activeRecordRelation
@@ -36,8 +37,28 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 * run inside your transaction without touching it.
 	 */
 	public $useTransaction=true;
-	/** @var CDbTransaction */
+	/**
+	 * @var CDbTransaction
+	 */
 	private $_transaction;
+
+	/**
+	 * @return CDbTransaction The transaction that is used while updating the database.
+	 * @see useTransaction
+	 */
+	public function getTransaction()
+	{
+		return $this->_transaction;
+	}
+
+	/**
+	 * @param CDbTransaction $transaction the transaction to be used while updating the database.
+	 * @see useTransaction
+	 */
+	public function setTransaction($transaction)
+	{
+		$this->_transaction=$transaction;
+	}
 
 	/**
 	 * Declares events and the corresponding event handler methods.

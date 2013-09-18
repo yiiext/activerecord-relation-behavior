@@ -623,6 +623,17 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	}
 
 	/**
+	 * Tests the transaction getter and setter
+	 */
+	public function testGetSetTransaction()
+	{
+		$behavior = new \EActiveRecordRelationBehavior();
+		$behavior->setTransaction($transaction=\Yii::app()->db->beginTransaction());
+		$this->assertInstanceOf('CDbTransaction', $transaction);
+		$this->assertSame($transaction, $behavior->getTransaction());
+	}
+
+	/**
 	 * @param \CActiveRecord $ar
 	 */
 	public function assertSaveSuccess($ar)
