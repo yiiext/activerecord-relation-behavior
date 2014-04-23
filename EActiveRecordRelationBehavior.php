@@ -99,7 +99,7 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 					if (!$this->owner->hasRelated($name) || !$this->isRelationSupported($relation))
 						break;
 
-					$this->populateBelongsToAttribute($name, $relation);
+					$this->populateBelongsToAttribute($name, $relation, false);
 
 				break;
 			}
@@ -266,16 +266,20 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 * Populates the BELONGS_TO relations attribute with the pk of the related model.
 	 * @param string $name the relation name
 	 * @param array $relation the relation config array
+	 * @param bool $beforeSave whether to check if the related record is not new to allow saving.
+	 * This can be false on beforeValidate.
+	 * @throws CDbException
 	 */
-	protected function populateBelongsToAttribute($name, $relation)
+	protected function populateBelongsToAttribute($name, $relation, $beforeSave = true)
 	{
 		$pk=null;
 		if (($related=$this->owner->getRelated($name, false))!==null) {
 			if (is_object($related)) {
 				/** @var CActiveRecord $related */
-				if ($related->isNewRecord)
+				if (!$related->isNewRecord)
+					$pk=$related->getPrimaryKey();
+				elseif ($beforeSave)
 					throw new CDbException('You can not save a record that has new related records!');
-				$pk=$related->getPrimaryKey();
 			} else {
 				$pk=$related;
 			}
