@@ -615,14 +615,11 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertTrue($model->validate());
 	}
 
-	/**
-	 * @expectedException CDbException
-	 */
 	public function testValidationBeforeSaveFail()
 	{
 		$model = new Profile();
 		$model->owner = new User();
-		$this->assertTrue($model->validate());
+		$this->assertFalse($model->validate());
 	}
 
 	/**
