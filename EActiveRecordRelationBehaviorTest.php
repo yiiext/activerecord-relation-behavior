@@ -22,14 +22,17 @@
  */
 
 namespace yiiext\behaviors\activeRecordRelation\tests;
+
 define('TEST_NAMESPACE', 'yiiext\behaviors\activeRecordRelation\tests');
 
 if (!defined('YII_PATH')) {
-	$yii = dirname(__FILE__).'/yii/framework/yiit.php';
+	$yii = dirname(__FILE__).'/vendor/yiisoft/yii/framework/yiit.php';
 	require_once($yii);
 }
 
 require_once(dirname(__FILE__).'/EActiveRecordRelationBehavior.php');
+
+\PHP_CodeCoverage_Filter::$blacklistClassNames = array();
 
 /**
  * unit test class for EActiveRecordRelationBehavior
