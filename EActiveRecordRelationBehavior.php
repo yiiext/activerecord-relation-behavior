@@ -325,9 +325,10 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			if (is_object($record) && $record->isNewRecord)
 				throw new CDbException('You can not save a record that has new related records!');
 
-			$pks[]=is_object($record) ? $record->getPrimaryKey() : $record;
+			if ($record !== null)
+				$pks[]=is_object($record) ? $record->getPrimaryKey() : $record;
 		}
-		return $pks;
+		return array_unique($pks);
 	}
 
 	/**
