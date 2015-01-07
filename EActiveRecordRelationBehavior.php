@@ -347,12 +347,15 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 			$record=$pk;
 			if (is_object($record) && $record->isNewRecord)
 				throw new CDbException('You can not save a record that has new related records!');
-			if (!is_object($record))
-				$record=CActiveRecord::model($className)->findByPk($pk);
-			if ($record===null)
-				throw new CDbException('Related record with primary key "'.print_r($pk,true).'" does not exist!');
+			if ($record!==null)
+			{
+				if (!is_object($record))
+					$record = CActiveRecord::model($className)->findByPk($pk);
+				if ($record === null)
+					throw new CDbException('Related record with primary key "' . print_r($pk, true) . '" does not exist!');
 
-			$records[]=$record;
+				$records[] = $record;
+			}
 		}
 		return $records;
 	}

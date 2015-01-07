@@ -447,16 +447,17 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$posts[2] = null;
 		$posts[5] = null;
 		for($n=1;$n<10;$n++) {
-			$posts[$n] = $posts[$n]->id;
+			$posts[$n] = $posts[$n] !== null ? $posts[$n]->id : null;
 		}
 		$author->posts = $posts;
 		$this->assertEquals(9, count($author->posts));
 		$this->assertSaveSuccess($author);
 
-		$this->assertEquals(7, count($author->posts));
+		$this->assertEquals(9, count($author->posts));
 		$author->refresh();
 		$this->assertEquals(7, count($author->posts));
 
+		$posts = $author->posts;
 		// set some records to null
 		$posts[1] = null;
 		$posts[3] = null;
@@ -465,7 +466,7 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertEquals(7, count($author->posts));
 		$this->assertSaveSuccess($author);
 
-		$this->assertEquals(5, count($author->posts));
+		$this->assertEquals(7, count($author->posts));
 		$author->refresh();
 		$this->assertEquals(5, count($author->posts));
 
@@ -638,8 +639,11 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$category->posts = $posts;
 		$this->assertEquals(9, count($category->posts));
 		$category->save();
+		$this->assertEquals(9, count($category->posts));
+		$category->refresh();
 		$this->assertEquals(7, count($category->posts));
 
+		$posts = $category->posts;
 		// set some records to null
 		$posts[1] = null;
 		$posts[3] = null;
@@ -648,6 +652,8 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$category->posts = $posts;
 		$this->assertEquals(7, count($category->posts));
 		$category->save();
+		$this->assertEquals(7, count($category->posts));
+		$category->refresh();
 		$this->assertEquals(5, count($category->posts));
 
 		// end real test, checking untouched
