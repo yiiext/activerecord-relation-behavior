@@ -430,6 +430,49 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 	}
 
 	/**
+	 * test adding null values to HAS_MANY pk values
+	 *
+	 * @dataProvider fkConfigurationProvider
+	 */
+	public function testHasManyNulls($config, $transactional)
+	{
+		$this->setConfig($config);
+		$this->startTransaction($transactional);
+
+		$author = $this->getJohn();
+		$this->assertSaveSuccess($author);
+
+		$this->assertEquals(array(), $author->posts);
+		$posts = $this->getPosts(10);
+		$posts[2] = null;
+		$posts[5] = null;
+		for($n=1;$n<10;$n++) {
+			$posts[$n] = $posts[$n]->id;
+		}
+		$author->posts = $posts;
+		$this->assertEquals(9, count($author->posts));
+		$this->assertSaveSuccess($author);
+
+		$this->assertEquals(7, count($author->posts));
+		$author->refresh();
+		$this->assertEquals(7, count($author->posts));
+
+		// set some records to null
+		$posts[1] = null;
+		$posts[3] = null;
+
+		$author->posts = $posts;
+		$this->assertEquals(7, count($author->posts));
+		$this->assertSaveSuccess($author);
+
+		$this->assertEquals(5, count($author->posts));
+		$author->refresh();
+		$this->assertEquals(5, count($author->posts));
+
+		$this->endTransaction($transactional);
+	}
+
+	/**
 	 * @return array
 	 */
 	protected function beforeManyMany()
@@ -551,6 +594,61 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 
 
 		// @todo test if additional relation data is touched
+
+		// end real test, checking untouched
+		$this->afterManyMany($un1, $un2);
+		$this->endTransaction($transactional);
+	}
+
+	/**
+	 * test adding null values to MANY_MANY pk values
+	 *
+	 * @dataProvider manymanyData
+	 */
+	public function testManyManyNulls($postsAsPk, $modulo, $config, $transactional)
+	{
+		$this->setConfig($config);
+		$this->startTransaction($transactional);
+
+		if ($postsAsPk) { // first with pk data
+			$posts=$this->getPosts(10, true);
+			for($n=1;$n<10;$n++) {
+				if ($n % $modulo == 0) {
+					$posts[$n] = $posts[$n]->id;
+				}
+			}
+		} else {
+			$posts = $this->getPosts(10, true); // second with object data
+		}
+		$posts[2] = null;
+		$posts[5] = null;
+
+		list($un1, $un2) = $this->beforeManyMany();
+
+		// begin real test
+		$category = new Category();
+		$category->name = 'my new cat';
+		$this->assertEquals(array(), $category->posts);
+		$category->save();
+		$this->assertEquals(array(), $category->posts);
+
+		$category->save();
+
+		$this->assertEquals(0, count($category->posts));
+		$category->posts = $posts;
+		$this->assertEquals(9, count($category->posts));
+		$category->save();
+		$this->assertEquals(7, count($category->posts));
+
+		// set some records to null
+		$posts[1] = null;
+		$posts[3] = null;
+
+		$this->assertEquals(7, count($category->posts));
+		$category->posts = $posts;
+		$this->assertEquals(7, count($category->posts));
+		$category->save();
+		$this->assertEquals(5, count($category->posts));
 
 		// end real test, checking untouched
 		$this->afterManyMany($un1, $un2);
