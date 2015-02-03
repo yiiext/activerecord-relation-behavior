@@ -736,6 +736,145 @@ class EActiveRecordRelationBehaviorTest extends \CTestCase
 		$this->assertInstanceOf('CDbTransaction', $transaction);
 		$this->assertSame($transaction, $behavior->getTransaction());
 	}
+	
+	/**
+	 * tests if withRelations() words correctly
+	 *
+	 * @dataProvider fkConfigurationProvider
+	 */
+	public function testSaveWithRelations($config, $transactional)
+	{
+		$this->setConfig($config);
+		$this->startTransaction($transactional);
+		
+		// create test data
+		// -- user
+		$jane = $this->getJane(10, true);
+		// -- profile
+		$profile = new Profile();
+		$profile->disableOwnerRule = true;
+		$profile->photo = "Jane's Photo";
+		$profile->website = "jane.doe.com";
+		$profile->save();
+		// -- posts
+		$posts = $this->getPosts(10);
+		
+		// set profile and posts for jane
+		$jane->profile = $profile;
+		$jane->posts = $posts;
+		
+		// save posts only
+		$jane->withRelations('posts')->save();
+		$jane->refresh();
+		
+		$this->assertNull($jane->profile);
+		$this->assertEquals(9, count($jane->posts));
+		
+		// set profile and posts for jane again
+		$jane->profile = $profile;
+		$jane->posts = $posts;
+		
+		// save posts and profile
+		$jane->withRelations('posts', 'profile')->save();
+		$jane->refresh();
+		
+		$this->assertEquals(9, count($jane->posts));
+		$this->assertEquals("jane.doe.com", $jane->profile->website);
+		
+		$this->endTransaction($transactional);
+	}
+	
+	/**
+	 * tests if withoutRelations() words correctly
+	 *
+	 * @dataProvider fkConfigurationProvider
+	 */
+	public function testSaveWithoutRelations($config, $transactional)
+	{
+		$this->setConfig($config);
+		$this->startTransaction($transactional);
+		
+		// create test data
+		// -- user
+		$jane = $this->getJane(10, true);
+		// -- profile#1
+		$profile1 = new Profile();
+		$profile1->disableOwnerRule = true;
+		$profile1->photo = "Jane's Photo";
+		$profile1->website = "jane.doe.com";
+		$profile1->save();
+		// -- profile#2
+		$profile2 = new Profile();
+		$profile2->disableOwnerRule = true;
+		$profile2->photo = "Jane's Photo";
+		$profile2->website = "jane.doe.io";
+		$profile2->save();
+		// -- posts
+		$posts = $this->getPosts(10);
+		
+		// set profile and posts for jane
+		$jane->profile = $profile1;
+		$jane->posts = $posts;
+		
+		// save profile only
+		$jane->withoutRelations('posts')->save();
+		$jane->refresh();
+		
+		$this->assertEquals(0, count($jane->posts));
+		$this->assertEquals("jane.doe.com", $jane->profile->website);
+		
+		// set profile and posts for jane again
+		$jane->profile = $profile2;
+		$jane->posts = $posts;
+		
+		// save posts only
+		$jane->withoutRelations('profile')->save();
+		$jane->refresh();
+		
+		$this->assertEquals(9, count($jane->posts));
+		$this->assertEquals("jane.doe.com", $jane->profile->website);
+		
+		$this->endTransaction($transactional);
+	}
+	
+	/**
+	 * tests if setting ignoreRelations works as expected
+	 *
+	 * @dataProvider fkConfigurationProvider
+	 */
+	public function testIgnoreRelations($config, $transactional)
+	{
+		$this->setConfig($config);
+		$this->startTransaction($transactional);
+		
+		// set ignore relations for user
+		User::$testIgnoreRelations = array('profile');
+		
+		// create test data
+		// -- user
+		$jane = $this->getJane(10, true);
+		// -- profile
+		$profile = new Profile();
+		$profile->disableOwnerRule = true;
+		$profile->photo = "Jane's Photo";
+		$profile->website = "jane.doe.com";
+		$profile->save();
+		// -- posts
+		$posts = $this->getPosts(10);
+		
+		// set profile and posts for jane
+		$jane->profile = $profile;
+		$jane->posts = $posts;
+		
+		// save profile only
+		$jane->save();
+		$jane->refresh();
+		
+		$this->assertEquals(9, count($jane->posts));
+		$this->assertNull($jane->profile);
+		
+		$this->endTransaction($transactional);
+	}
 
 	/**
 	 * @param \CActiveRecord $ar
@@ -902,6 +1041,7 @@ class Profile extends \CActiveRecord
 {
 	public static $configurationType='normal';
 	public $disableOwnerRule=false;
+
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -975,6 +1115,7 @@ class Profile extends \CActiveRecord
 class User extends \CActiveRecord
 {
 	public static $configurationType='normal';
+	public static $testIgnoreRelations=array();
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
@@ -998,7 +1139,12 @@ class User extends \CActiveRecord
 	 */
 	public function behaviors()
 	{
-		return array('activeRecordRelationBehavior'=>'EActiveRecordRelationBehavior');
+		return array(
+			'activeRecordRelationBehavior'=>array(
+				'class'=>'EActiveRecordRelationBehavior',
+				'ignoreRelations'=>self::$testIgnoreRelations,
+			)
+		);
 	}
 
 	/**

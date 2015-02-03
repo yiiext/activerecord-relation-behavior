@@ -19,7 +19,6 @@
  *
  * Limitations:
  * - currently does not support composite primary keys
- * - currently handles all existing relations, will add support for limitation shortly
  * - relations defined with 'through' are not supported yet (http://www.yiiframework.com/doc/guide/1.1/en/database.arr#relational-query-with-through)
  *
  * @property CActiveRecord $owner The owner AR that this behavior is attached to.
@@ -38,6 +37,11 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 */
 	public $useTransaction=true;
 	/**
+	 * @var array allows to configure which relations should be ignored by default
+	 * This option will only be considered when withRelations() or withoutRelations() is not used
+	 */
+	public $ignoreRelations=array();
+	/**
 	 * @var CDbTransaction
 	 */
 	private $_transaction;
@@ -45,7 +49,6 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	 * Holds active relations to be saved. null means all relations.
 	 */
 	protected $_enabledRelations;
-
 
 	/**
 	 * @return CDbTransaction The transaction that is used while updating the database.
@@ -470,8 +473,14 @@ class EActiveRecordRelationBehavior extends CActiveRecordBehavior
 	protected function getRelations()
 	{
 		if (is_null($this->_enabledRelations))
+		{
+			if (count($this->ignoreRelations) > 0)
+			{
+				$diff = array_combine($this->ignoreRelations, $this->ignoreRelations);
+				return array_diff_key($this->owner->relations(), $diff);
+			}
 			return $this->owner->relations();
-
+		}
 		return array_intersect_key($this->owner->relations(), array_flip($this->_enabledRelations));
 	}
 }
